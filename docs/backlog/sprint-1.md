@@ -181,13 +181,13 @@ Conventions: keys are stable, never renumbered. Points are Fibonacci; 8 means sp
 - Out of scope: shared contracts, web frontend, Docker configuration
 - Depends on: TODO-102, TODO-103, TODO-104, TODO-105
 - AC:
-  - [ ] Typed Domain Errors (`AppError`, `ValidationError` 400, `UnauthorizedError` 401, `ForbiddenError` 403, `NotFoundError` 404, `ConflictError` 409).
-  - [ ] Centralized Error Middleware registered as the final Express layer; formats errors consistently into `{ success: false, error, code, issues? }`.
-  - [ ] Controllers are thin orchestrators: remove per-route try/catches; use an `asyncHandler` wrapper forwarding thrown errors to `next()`.
-  - [ ] Container Blueprints: `UserRepository`, `TodoRepository`, `AuthService`, and `TodoService` are Classes/Factories taking dependencies via constructors/closures.
-  - [ ] Module-level singleton state in models eliminated: repositories take an explicit Storage adapter (`new Map()` or DB client).
-  - [ ] Composition Root in `services/api/src/container.js` instantiates the entire dependency graph bottom-up and exposes ready-to-mount routes.
-  - [ ] All 28 existing backend integration tests continue to pass with zero regressions.
+  - [x] Typed Domain Errors (`AppError`, `ValidationError` 400, `UnauthorizedError` 401, `ForbiddenError` 403, `NotFoundError` 404, `ConflictError` 409).
+  - [x] Centralized Error Middleware registered as the final Express layer; formats errors consistently into `{ success: false, error, code, issues? }`.
+  - [x] Controllers are thin orchestrators: remove per-route try/catches; use an `asyncHandler` wrapper forwarding thrown errors to `next()`.
+  - [x] Container Blueprints: `UserRepository`, `TodoRepository`, `AuthService`, and `TodoService` are Classes/Factories taking dependencies via constructors/closures.
+  - [x] Module-level singleton state in models eliminated: repositories take an explicit Storage adapter (`new Map()` or DB client).
+  - [x] Composition Root in `services/api/src/container.js` instantiates the entire dependency graph bottom-up and exposes ready-to-mount routes.
+  - [x] All 28 existing backend integration tests continue to pass with zero regressions.
 
 ---
 
@@ -199,10 +199,40 @@ Conventions: keys are stable, never renumbered. Points are Fibonacci; 8 means sp
 - Out of scope: backend services, shared contracts
 - Depends on: TODO-106, TODO-107, TODO-110
 - AC:
-  - [ ] Tier 1: Dedicated State Store managing `{ auth, todos, stats, filter, pagination }`.
-  - [ ] Tier 2: Pure State Mutations / Reducers (`SET_AUTH`, `SET_TODOS`, `OPTIMISTIC_TOGGLE`, `ROLLBACK_TOGGLE`).
-  - [ ] Tier 3: Async Boundary with `AbortController` cancellation signal to prevent out-of-order responses on rapid filter tab clicks.
-  - [ ] Tier 4: Custom Hooks / Stateful Wrappers (`useAuth`, `useTodos`, `useDashboardStats`) returning `{ state, actions }`.
-  - [ ] Tier 5: Thin Event Handlers on components delegating directly to Tier 4 actions.
-  - [ ] Tier 6: Declarative UI rendering where view updates strictly derive from state transitions.
-  - [ ] All web delivery tests continue to pass.
+  - [x] Tier 1: Dedicated State Store managing `{ auth, todos, stats, filter, pagination }`.
+  - [x] Tier 2: Pure State Mutations / Reducers (`SET_AUTH`, `SET_TODOS`, `OPTIMISTIC_TOGGLE`, `ROLLBACK_TOGGLE`).
+  - [x] Tier 3: Async Boundary with `AbortController` cancellation signal to prevent out-of-order responses on rapid filter tab clicks.
+  - [x] Tier 4: Custom Hooks / Stateful Wrappers (`useAuth`, `useTodos`, `useDashboardStats`) returning `{ state, actions }`.
+  - [x] Tier 5: Thin Event Handlers on components delegating directly to Tier 4 actions.
+  - [x] Tier 6: Declarative UI rendering where view updates strictly derive from state transitions.
+  - [x] All web delivery tests continue to pass.
+
+---
+
+## TODO-112 — Variable-Driven Design Tokens & 3-Layer Precursor Architecture
+
+- Type: refactor, 3 points
+- Story: As a frontend engineer, I want the web interface styled using the 3-Layer Precursor Token Architecture, with fluid clamp() typography and a mobile-first responsive variable cascade, eliminating class spread and breakpoint drift.
+- Blast radius: `apps/web/public/styles.css`, `apps/web/tests/web.test.js`
+- Out of scope: backend logic, Dockerfiles
+- AC:
+  - [ ] Layer 1 Precursor Tokens in `:root`: spacing scale (`--space-2xs` to `--space-2xl`), fluid typography using `clamp()` (`--font-xs` to `--font-hero`), semantic colors, radius scale, and elevation shadows.
+  - [ ] Layer 2 Mobile-First Responsive Cascade: media query blocks (`@media (min-width: 640px)`, `768px`, `1024px`) dynamically overriding precursor layout tokens.
+  - [ ] Layer 3 Semantic Consumers: classes `.app-layout`, `.surface-card`, `.metrics-grid`, `.btn-primary`, `.form-group` consuming precursor variables.
+  - [ ] Automated tests verify style delivery and design token existence.
+
+---
+
+## TODO-113 — 3-Trigger CI/CD Pipeline, DevOps File Authoring & Frozen Inode Architecture
+
+- Type: chore, 5 points
+- Story: As an SRE, I want the full 3-Trigger Sequential CI/CD relay implemented, the Indie Local Dev Docker Compose archetype authored, and the Frozen Inode architectural lens formally documented.
+- Blast radius: `scripts/pre-commit-gate.js`, `.github/workflows/ci.yml`, `docker-compose.yml`, `docs/architecture/0002-frozen-inode-and-pipeline-physics.md`
+- Out of scope: application business logic
+- AC:
+  - [ ] Trigger 1 (Local Laptop Guard): `scripts/pre-commit-gate.js` scans staged files for leaked secrets, ensures required envs are documented, and runs Docker hygiene checks before commit inodes can be created.
+  - [ ] Trigger 2 (PR Cloud Gate): `.github/workflows/ci.yml` validates code delta, executes tests, and enforces container certification (<150MB image size budget & detached boot smoke test).
+  - [ ] Trigger 3 (Release Gate on `main` merge): `.github/workflows/ci.yml` runs heavy release verification and executes canary build pinned strictly to `${{ github.sha }}`, explicitly rejecting `:latest`.
+  - [ ] DevOps File Authoring: `docker-compose.yml` provides both the Indie Local Dev archetype (live bind-mounts for instant hot-reload) and Corporate Production archetype.
+  - [ ] Frozen Inode Architecture: `docs/architecture/0002-frozen-inode-and-pipeline-physics.md` details how Git tracking, Turborepo delta compilation, OverlayFS container layers, and ephemeral runners operate as frozen inodes and mutable pointer dictionaries.
+
