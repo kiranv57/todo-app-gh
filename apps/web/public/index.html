@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Enterprise Task Management Platform</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <div class="app-layout">
+    <header class="app-header">
+      <div class="header-brand">
+        <span class="brand-icon">✓</span>
+        <h1>TaskSphere Enterprise</h1>
+      </div>
+      <div id="user-profile" class="user-profile hidden">
+        <span id="user-badge" class="badge"></span>
+        <button id="btn-logout" class="btn btn-secondary">Sign Out</button>
+      </div>
+    </header>
+
+    <main class="app-content">
+      <!-- Unauthenticated State: Auth Forms -->
+      <section id="auth-section" class="auth-container">
+        <div class="auth-card">
+          <div class="auth-tabs">
+            <button id="tab-login" class="tab-btn active">Log In</button>
+            <button id="tab-register" class="tab-btn">Register</button>
+          </div>
+
+          <div id="auth-alert" class="alert hidden"></div>
+
+          <!-- Login Form -->
+          <form id="form-login" class="auth-form">
+            <div class="form-group">
+              <label for="login-email">Corporate Email</label>
+              <input type="email" id="login-email" required placeholder="user@company.com" autocomplete="email" />
+            </div>
+            <div class="form-group">
+              <label for="login-password">Password</label>
+              <input type="password" id="login-password" required placeholder="••••••••" autocomplete="current-password" />
+            </div>
+            <button type="submit" class="btn btn-primary full-width">Sign In</button>
+          </form>
+
+          <!-- Register Form -->
+          <form id="form-register" class="auth-form hidden">
+            <div class="form-group">
+              <label for="reg-username">Username</label>
+              <input type="text" id="reg-username" required placeholder="johndoe" autocomplete="username" />
+            </div>
+            <div class="form-group">
+              <label for="reg-email">Corporate Email</label>
+              <input type="email" id="reg-email" required placeholder="johndoe@company.com" autocomplete="email" />
+            </div>
+            <div class="form-group">
+              <label for="reg-password">Password</label>
+              <input type="password" id="reg-password" required placeholder="Min 6 characters" autocomplete="new-password" />
+            </div>
+            <button type="submit" class="btn btn-primary full-width">Create Account</button>
+          </form>
+        </div>
+      </section>
+
+      <!-- Authenticated State: Dashboard & Task Management -->
+      <section id="dashboard-section" class="dashboard-container hidden">
+        <!-- Dashboard Metrics Cards -->
+        <div class="metrics-grid">
+          <div class="metric-card">
+            <span class="metric-label">Total Assigned</span>
+            <span id="metric-total" class="metric-val">0</span>
+          </div>
+          <div class="metric-card">
+            <span class="metric-label">Completed</span>
+            <span id="metric-completed" class="metric-val text-success">0</span>
+          </div>
+          <div class="metric-card">
+            <span class="metric-label">Incomplete</span>
+            <span id="metric-incomplete" class="metric-val text-warning">0</span>
+          </div>
+          <div class="metric-card">
+            <span class="metric-label">Completion Velocity</span>
+            <span id="metric-rate" class="metric-val">0%</span>
+          </div>
+        </div>
+
+        <!-- Task Creation Card -->
+        <div class="panel-card">
+          <h3>Create Task</h3>
+          <form id="form-create-todo" class="create-todo-form">
+            <div class="form-row">
+              <input type="text" id="todo-title" class="input-text" placeholder="Task summary (e.g. Implement mTLS connection)" required maxlength="140" />
+              <input type="text" id="todo-desc" class="input-text" placeholder="Context / notes (optional)" maxlength="1000" />
+              <button type="submit" class="btn btn-primary">Add Task</button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Todo Controls & Filter Bar -->
+        <div class="task-management-panel">
+          <div class="filter-controls">
+            <div class="filter-tabs">
+              <button class="filter-btn active" data-filter="all">All Tasks</button>
+              <button class="filter-btn" data-filter="active">Active</button>
+              <button class="filter-btn" data-filter="completed">Completed</button>
+            </div>
+            <div class="page-meta">
+              <span id="pagination-summary">Showing 0 items</span>
+            </div>
+          </div>
+
+          <div id="todo-list" class="todo-list">
+            <!-- Dynamic task items injected via app.js -->
+          </div>
+
+          <div class="pagination-footer">
+            <button id="btn-prev-page" class="btn btn-secondary btn-sm" disabled>&larr; Previous</button>
+            <span id="current-page-label">Page 1</span>
+            <button id="btn-next-page" class="btn btn-secondary btn-sm" disabled>Next &rarr;</button>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="/app.js"></script>
+</body>
+</html>
