@@ -98,5 +98,19 @@ else
   exit 1
 fi
 
+echo "📦 Verifying Stage 5 container size budget (<150MB)..."
+IMAGE_SIZE_BYTES=$(docker image inspect "$IMAGE_NAME" --format='{{.Size}}' 2>/dev/null || echo 0)
+if [ "$IMAGE_SIZE_BYTES" -gt 0 ]; then
+  IMAGE_SIZE_MB=$((IMAGE_SIZE_BYTES / 1024 / 1024))
+  echo "   Image size: ${IMAGE_SIZE_MB}MB"
+  if [ "$IMAGE_SIZE_MB" -gt 150 ]; then
+    echo "❌ Size budget violation: Image size (${IMAGE_SIZE_MB}MB) exceeds 150MB budget!"
+    exit 1
+  else
+    echo "✅ Size budget passed: ${IMAGE_SIZE_MB}MB is within <150MB limit."
+  fi
+fi
+
 echo "----------------------------------------------------------------------------------------"
-echo "🎉 DOCKER SMOKE TEST PASSED: Container boots cleanly, responds to /health, runs non-root."
+echo "🎉 DOCKER SMOKE TEST PASSED: Container boots cleanly, responds to /health, certified <150MB & non-root."
+

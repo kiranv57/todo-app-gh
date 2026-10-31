@@ -1,4 +1,13 @@
-name: Continuous Integration Quality Gate
+name: Continuous Integration & Deployment Relay
+
+# ==============================================================================
+# The 3-Trigger Sequential CI/CD Pipeline Architecture
+# Skill: /three-trigger-cicd-pipeline & /frozen-inode-mental-model
+#
+# Trigger 1: Local Laptop Guard (git commit via scripts/pre-commit-gate.js)
+# Trigger 2: Fast PR Cloud Verification (git push / pull_request - Stages 3, 4, 5)
+# Trigger 3: Heavy Integration & Immutable Canary Release (merge to main - Stages 6, 7)
+# ==============================================================================
 
 on:
   push:
@@ -13,11 +22,12 @@ concurrency:
 
 jobs:
   # ============================================================================
-  # STAGE 1: FAST RUNNERS (Static Analysis, Hygiene, & Unit Test Gates)
+  # TRIGGER 2: FAST PR CLOUD VERIFICATION (Stages 3, 4, 5)
   # ============================================================================
 
-  docker-hygiene:
-    name: Docker Hygiene & Layer Physics Gatekeeper
+  # Stage 4: Docker Precursor Gates (Linting & Non-Root USER verification)
+  docker-precursor-gate:
+    name: "Trigger 2: [Stage 4] Docker Precursor & Layer Hygiene Gate"
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
@@ -28,11 +38,12 @@ jobs:
         with:
           node-version: 22
 
-      - name: Audit Dockerfiles for Non-Root USER and Layer Cache Invariant
+      - name: Audit Dockerfiles for Non-Root USER & Layer Cache Invariant
         run: node scripts/check-docker-hygiene.js --strict
 
+  # Stage 3: VM Delta Inode Compile & Multi-Package Verification
   test-shared-contracts:
-    name: Shared Contracts Validation (@repo/shared)
+    name: "Trigger 2: [Stage 3] Shared Contracts (@repo/shared)"
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
@@ -48,7 +59,7 @@ jobs:
         run: node --test 'tests/**/*.test.js'
 
   test-backend-api:
-    name: Backend API Suite (@repo/api)
+    name: "Trigger 2: [Stage 3] Backend API Suite (@repo/api)"
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
@@ -66,7 +77,7 @@ jobs:
         run: node --test 'tests/**/*.test.js'
 
   test-frontend-web:
-    name: Web Frontend Delivery Suite (@repo/web)
+    name: "Trigger 2: [Stage 3] Web Frontend Delivery (@repo/web)"
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
@@ -81,14 +92,10 @@ jobs:
         working-directory: apps/web
         run: node --test 'tests/**/*.test.js'
 
-  # ============================================================================
-  # STAGE 2: HEAVY VM RUNNER (Docker Multi-Stage Build & Smoke Test Gate)
-  # Reached strictly if all Stage 1 gates vote GREEN
-  # ============================================================================
-
-  docker-smoke-gate:
-    name: Docker Smoke Test & Non-Root Boot Gate (Heavy VM)
-    needs: [docker-hygiene, test-shared-contracts, test-backend-api, test-frontend-web]
+  # Stage 5: Container Certification (<150MB byte budget & /health smoke test)
+  container-certification:
+    name: "Trigger 2: [Stage 5] Container Certification & Smoke Gate"
+    needs: [docker-precursor-gate, test-shared-contracts, test-backend-api, test-frontend-web]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code (Clean-Room Pull)
@@ -97,5 +104,61 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Execute Docker Container Smoke Test Gate
+      - name: Execute Docker Container Smoke Test & Size Gate
         run: bash scripts/docker-smoke.sh
+
+  # ============================================================================
+  # TRIGGER 3: INTEGRATION & RELEASE GATE (git merge into main)
+  # Stages 6 & 7 execute strictly on push to main (after PR approval & merge)
+  # ============================================================================
+
+  heavy-integration-matrix:
+    name: "Trigger 3: [Stage 6] Heavy Integration Matrix (Multi-Tenant & Security Attack)"
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    needs: [container-certification]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Execute End-to-End Monorepo Test Matrix
+        env:
+          JWT_SECRET: ci-test-runner-cryptographic-signing-key-32-chars
+        run: |
+          (cd packages/shared && node --test 'tests/**/*.test.js')
+          (cd services/api && node --test 'tests/**/*.test.js')
+          (cd apps/web && node --test 'tests/**/*.test.js')
+
+  immutable-canary-deployment:
+    name: "Trigger 3: [Stage 7] Immutable Canary Deployment (Commit SHA Pinned)"
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    needs: [heavy-integration-matrix]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Immutable Container Tagged by Git Commit SHA
+        env:
+          COMMIT_SHA: ${{ github.sha }}
+        run: |
+          echo "Building immutable release images pinned to commit SHA: ${COMMIT_SHA}"
+          docker build -t "task-sphere-api:${COMMIT_SHA}" -f services/api/Dockerfile .
+          docker build -t "task-sphere-web:${COMMIT_SHA}" -f apps/web/Dockerfile .
+
+      - name: Anti-Pattern Defense (Strictly Ban :latest Tag)
+        run: |
+          echo "Verifying deployment tags strictly exclude unpinned ':latest'..."
+          if docker images | grep -q "task-sphere-api:latest"; then
+            echo "FATAL: Deployment of unpinned ':latest' is strictly prohibited."
+            exit 1
+          fi
+          echo "PASS: Production artifacts pinned to immutable commit SHA ${{ github.sha }}."

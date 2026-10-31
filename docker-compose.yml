@@ -1,0 +1,129 @@
+# ==============================================================================
+# Enterprise TaskSphere Docker Compose Architecture
+# Skills: /devops-file-authoring & /six-step-checklist-precursor
+#
+# Implements the Two Core Architectural Archetypes:
+#   1. INDIE / LOCAL DEV (Profile: dev)
+#      - Live host bind-mounts for instant hot-reload iteration (0ms rebuilds).
+#      - Anonymous node_modules volumes preventing host directory pollution.
+#   2. CORPORATE PRODUCTION (Profile: prod)
+#      - Pre-baked immutable multi-stage images.
+#      - Dedicated non-root user (UID 1001).
+#      - tini PID 1 supervisor signal handling.
+#      - Automated container healthchecks.
+# ==============================================================================
+
+version: '3.8'
+
+services:
+  # ============================================================================
+  # ARCHETYPE 1: INDIE / LOCAL DEV (Live Bind-Mounts & 0ms Hot-Reload)
+  # Run: docker compose --profile dev up
+  # ============================================================================
+
+  api-dev:
+    profiles: ["dev"]
+    image: node:22-alpine
+    container_name: tasksphere-api-dev
+    working_dir: /app/services/api
+    command: sh -c "pnpm install && pnpm dev"
+    ports:
+      - "5000:5000"
+    environment:
+      - NODE_ENV=development
+      - PORT=5000
+      - JWT_SECRET=local-development-cryptographic-signing-secret-32-chars
+      - MONGODB_URI=mongodb://mongo:27017/todo-dev
+    volumes:
+      # Step 4 Invariant: Live Bind-Mount from developer laptop to container
+      - .:/app
+      # Prevent container node_modules from polluting or conflicting with host
+      - /app/node_modules
+      - /app/services/api/node_modules
+      - /app/packages/shared/node_modules
+    depends_on:
+      - mongo
+
+  web-dev:
+    profiles: ["dev"]
+    image: node:22-alpine
+    container_name: tasksphere-web-dev
+    working_dir: /app/apps/web
+    command: sh -c "pnpm install && pnpm dev"
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - PORT=3000
+      - API_URL=http://api-dev:5000
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/apps/web/node_modules
+    depends_on:
+      - api-dev
+
+  # ============================================================================
+  # ARCHETYPE 2: CORPORATE PRODUCTION (Immutable Multi-Stage, Non-Root UID 1001)
+  # Run: docker compose --profile prod up
+  # ============================================================================
+
+  api-prod:
+    profiles: ["prod"]
+    build:
+      context: .
+      dockerfile: services/api/Dockerfile
+    image: tasksphere-api:production
+    container_name: tasksphere-api-prod
+    ports:
+      - "5000:5000"
+    environment:
+      - NODE_ENV=production
+      - PORT=5000
+      - JWT_SECRET=${JWT_SECRET:-production-signing-key-must-be-injected-from-vault}
+      - MONGODB_URI=mongodb://mongo:27017/todo-prod
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+    depends_on:
+      - mongo
+
+  web-prod:
+    profiles: ["prod"]
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    image: tasksphere-web:production
+    container_name: tasksphere-web-prod
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - API_URL=http://api-prod:5000
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+    depends_on:
+      - api-prod
+
+  # Shared Database Precursor
+  mongo:
+    image: mongo:7-jammy
+    container_name: tasksphere-mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+
+volumes:
+  mongo-data:
+    driver: local
