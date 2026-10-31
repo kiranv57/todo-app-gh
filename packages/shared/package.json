@@ -1,0 +1,13 @@
+{
+  "name": "@repo/shared",
+  "version": "1.0.0",
+  "private": true,
+  "main": "./src/index.js",
+  "scripts": {
+    "test": "node --test 'tests/**/*.test.js'",
+    "build": "exit 0"
+  },
+  "dependencies": {
+    "zod": "^4.6.7"
+  }
+}
