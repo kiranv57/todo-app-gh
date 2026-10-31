@@ -4,6 +4,22 @@ All notable changes to the TaskSphere Todo Platform are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2026-10-31
+
+### Added
+- **Backend Architecture & DI Composition Root (`TODO-110`)**:
+  - Container Blueprints (`UserRepository`, `TodoRepository`, `AuthService`, `TodoService`, `AuthController`, `TodoController`) eliminating module-level singleton state.
+  - Composition Root (`createContainer`) assembling the dependency graph bottom-up with configurable storage instances for hermetic, state-leak-free test isolation.
+  - Centralized Error Handling architecture (`services/api/src/errors/`, `services/api/src/middleware/errorHandler.js`) with typed `AppError` taxonomy (`ValidationError`, `UnauthorizedError`, `ForbiddenError`, `NotFoundError`, `ConflictError`).
+  - Elimination of fragmented route-level `try/catch` boilerplate via `asyncHandler`.
+- **Frontend 6-Tier Reactive Architecture (`TODO-111`)**:
+  - **Tier 1 (Store)**: Observable Store blueprint (`createStore`) with immutable snapshot reading and subscription listeners.
+  - **Tier 2 (Reducers)**: Pure, synchronous state transformation reducers (`auth`, `todos`, `dashboard`, `ui`) with no-backend side-effect isolation.
+  - **Tier 3 (Async Boundary)**: API client (`createApiClient`) with explicit `AbortController` cancellation signal integration on all endpoints.
+  - **Tier 4 (Actions & Hooks)**: Stateful action orchestrators (`createActions`) with in-flight `AbortController` request cancellation preventing out-of-order race conditions on rapid filter switching and pagination.
+  - **Optimistic UI & Rollbacks**: Immediate local task state updates with automated rollback (`TODO_ROLLBACK_TOGGLE`) on server failure.
+  - **Tier 5 & 6 (UI Projection & Explicit Triggers)**: Declarative DOM rendering subscribed to store state, paired with thin event handlers extracting DOM data.
+
 ## [1.0.0] - 2026-10-31
 
 ### Added
