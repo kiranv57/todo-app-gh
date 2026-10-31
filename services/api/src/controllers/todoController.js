@@ -3,7 +3,7 @@ const {
   updateTodoSchema,
   todoFilterSchema
 } = require('@repo/shared');
-const todoService = require('../services/todoService');
+const { ValidationError } = require('../errors');
 
 function formatZodIssues(error) {
   return error.issues.map((issue) => ({
@@ -12,155 +12,113 @@ function formatZodIssues(error) {
   }));
 }
 
-function create(req, res) {
-  const result = createTodoSchema.safeParse(req.body);
-  if (!result.success) {
-    return res.status(400).json({
-      success: false,
-      error: 'Validation failed',
-      code: 'VALIDATION_ERROR',
-      issues: formatZodIssues(result.error)
-    });
+/**
+ * TodoController Container Blueprint
+ * Orchestrates HTTP input parsing, validation, and response formatting.
+ * Thin tier delegating all domain logic and throwing errors to centralized middleware.
+ */
+class TodoController {
+  #todoService;
+
+  constructor(todoService) {
+    if (!todoService) throw new Error('TodoController requires TodoService instance');
+    this.#todoService = todoService;
   }
 
-  try {
-    const todo = todoService.createTodo({
+  create = (req, res) => {
+    const result = createTodoSchema.safeParse(req.body);
+    if (!result.success) {
+      throw new ValidationError('Validation failed', formatZodIssues(result.error));
+    }
+
+    const todo = this.#todoService.createTodo({
       ...result.data,
       ownerId: req.user.id
     });
+
     return res.status(201).json({
       success: true,
       data: { todo }
     });
-  } catch (err) {
-    return res.status(500).json({
-      success: false,
-      error: 'Internal server error',
-      code: 'INTERNAL_ERROR'
-    });
-  }
-}
+  };
 
-function list(req, res) {
-  const queryResult = todoFilterSchema.safeParse(req.query);
-  if (!queryResult.success) {
-    return res.status(400).json({
-      success: false,
-      error: 'Invalid filter or pagination parameters',
-      code: 'VALIDATION_ERROR',
-      issues: formatZodIssues(queryResult.error)
-    });
-  }
-
-  const { completed, page, limit } = queryResult.data;
-  const result = todoService.listTodos({
-    ownerId: req.user.id,
-    completed,
-    page,
-    limit
-  });
-
-  return res.status(200).json({
-    success: true,
-    data: result.data,
-    pagination: {
-      page: result.page,
-      limit: result.limit,
-      total: result.total,
-      totalPages: result.totalPages
+  list = (req, res) => {
+    const queryResult = todoFilterSchema.safeParse(req.query);
+    if (!queryResult.success) {
+      throw new ValidationError('Invalid filter or pagination parameters', formatZodIssues(queryResult.error));
     }
-  });
-}
 
-function getById(req, res) {
-  try {
-    const todo = todoService.getTodoById({
+    const { completed, page, limit } = queryResult.data;
+    const result = this.#todoService.listTodos({
+      ownerId: req.user.id,
+      completed,
+      page,
+      limit
+    });
+
+    return res.status(200).json({
+      success: true,
+      data: result.data,
+      pagination: {
+        page: result.page,
+        limit: result.limit,
+        total: result.total,
+        totalPages: result.totalPages
+      }
+    });
+  };
+
+  getById = (req, res) => {
+    const todo = this.#todoService.getTodoById({
       id: req.params.id,
       ownerId: req.user.id
     });
+
     return res.status(200).json({
       success: true,
       data: { todo }
     });
-  } catch (err) {
-    return res.status(err.status || 500).json({
-      success: false,
-      error: err.message,
-      code: err.status === 403 ? 'FORBIDDEN' : err.status === 404 ? 'NOT_FOUND' : 'INTERNAL_ERROR'
-    });
-  }
-}
+  };
 
-function update(req, res) {
-  const parseResult = updateTodoSchema.safeParse(req.body);
-  if (!parseResult.success) {
-    return res.status(400).json({
-      success: false,
-      error: 'Validation failed',
-      code: 'VALIDATION_ERROR',
-      issues: formatZodIssues(parseResult.error)
-    });
-  }
+  update = (req, res) => {
+    const parseResult = updateTodoSchema.safeParse(req.body);
+    if (!parseResult.success) {
+      throw new ValidationError('Validation failed', formatZodIssues(parseResult.error));
+    }
 
-  try {
-    const updated = todoService.updateTodo({
+    const updated = this.#todoService.updateTodo({
       id: req.params.id,
       ownerId: req.user.id,
       updates: parseResult.data
     });
+
     return res.status(200).json({
       success: true,
       data: { todo: updated }
     });
-  } catch (err) {
-    return res.status(err.status || 500).json({
-      success: false,
-      error: err.message,
-      code: err.status === 403 ? 'FORBIDDEN' : err.status === 404 ? 'NOT_FOUND' : 'INTERNAL_ERROR'
-    });
-  }
-}
+  };
 
-function remove(req, res) {
-  try {
-    const result = todoService.deleteTodo({
+  remove = (req, res) => {
+    const result = this.#todoService.deleteTodo({
       id: req.params.id,
       ownerId: req.user.id
     });
+
     return res.status(200).json({
       success: true,
       message: result.message
     });
-  } catch (err) {
-    return res.status(err.status || 500).json({
-      success: false,
-      error: err.message,
-      code: err.status === 403 ? 'FORBIDDEN' : err.status === 404 ? 'NOT_FOUND' : 'INTERNAL_ERROR'
-    });
-  }
-}
+  };
 
-function getDashboardStats(req, res) {
-  try {
-    const stats = todoService.getDashboardStats(req.user.id);
+  getDashboardStats = (req, res) => {
+    const stats = this.#todoService.getDashboardStats(req.user.id);
     return res.status(200).json({
       success: true,
       data: stats
     });
-  } catch (err) {
-    return res.status(500).json({
-      success: false,
-      error: 'Internal server error',
-      code: 'INTERNAL_ERROR'
-    });
-  }
+  };
 }
 
 module.exports = {
-  create,
-  list,
-  getById,
-  update,
-  remove,
-  getDashboardStats
+  TodoController
 };

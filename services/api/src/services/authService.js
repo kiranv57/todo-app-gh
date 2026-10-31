@@ -1,83 +1,84 @@
-const { UserModel } = require('../models/User');
 const { hashPassword, comparePassword } = require('../lib/hash');
 const { signToken } = require('../lib/jwt');
-const { getEnv } = require('../config/env');
+const { UnauthorizedError } = require('../errors');
 
 function sanitizeUser(user) {
   const { passwordHash, ...clean } = user;
   return clean;
 }
 
-function registerUser({ username, email, password }) {
-  const env = getEnv();
-  const passwordHash = hashPassword(password);
+/**
+ * AuthService Container Blueprint
+ * Encapsulates identity verification, key derivation, and token issuance.
+ * Receives UserRepository and JWT secret via constructor Dependency Injection.
+ */
+class AuthService {
+  #userRepo;
+  #jwtSecret;
 
-  const doc = UserModel.create({
-    username,
-    email,
-    passwordHash
-  });
-
-  const user = sanitizeUser(doc);
-  const token = signToken(
-    {
-      sub: user._id,
-      email: user.email,
-      username: user.username
-    },
-    env.JWT_SECRET,
-    900 // 15 mins
-  );
-
-  return {
-    user,
-    token
-  };
-}
-
-function loginUser({ email, password }) {
-  const env = getEnv();
-  const doc = UserModel.findByEmail(email);
-
-  if (!doc) {
-    const error = new Error('Invalid email or password');
-    error.status = 401;
-    throw error;
+  constructor(userRepo, jwtSecret) {
+    if (!userRepo) throw new Error('AuthService requires UserRepository instance');
+    if (!jwtSecret) throw new Error('AuthService requires JWT secret');
+    this.#userRepo = userRepo;
+    this.#jwtSecret = jwtSecret;
   }
 
-  const isValid = comparePassword(password, doc.passwordHash);
-  if (!isValid) {
-    const error = new Error('Invalid email or password');
-    error.status = 401;
-    throw error;
+  registerUser({ username, email, password }) {
+    const passwordHash = hashPassword(password);
+    const doc = this.#userRepo.create({
+      username,
+      email,
+      passwordHash
+    });
+
+    const user = sanitizeUser(doc);
+    const token = signToken(
+      {
+        sub: user._id,
+        email: user.email,
+        username: user.username
+      },
+      this.#jwtSecret,
+      900 // 15 mins
+    );
+
+    return { user, token };
   }
 
-  const user = sanitizeUser(doc);
-  const token = signToken(
-    {
-      sub: user._id,
-      email: user.email,
-      username: user.username
-    },
-    env.JWT_SECRET,
-    900
-  );
+  loginUser({ email, password }) {
+    const doc = this.#userRepo.findByEmail(email);
 
-  return {
-    user,
-    token
-  };
-}
+    if (!doc) {
+      throw new UnauthorizedError('Invalid email or password');
+    }
 
-function getUserById(id) {
-  const doc = UserModel.findById(id);
-  if (!doc) return null;
-  return sanitizeUser(doc);
+    const isValid = comparePassword(password, doc.passwordHash);
+    if (!isValid) {
+      throw new UnauthorizedError('Invalid email or password');
+    }
+
+    const user = sanitizeUser(doc);
+    const token = signToken(
+      {
+        sub: user._id,
+        email: user.email,
+        username: user.username
+      },
+      this.#jwtSecret,
+      900
+    );
+
+    return { user, token };
+  }
+
+  getUserById(id) {
+    const doc = this.#userRepo.findById(id);
+    if (!doc) return null;
+    return sanitizeUser(doc);
+  }
 }
 
 module.exports = {
-  registerUser,
-  loginUser,
-  getUserById,
+  AuthService,
   sanitizeUser
 };

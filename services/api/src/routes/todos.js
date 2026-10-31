@@ -1,23 +1,23 @@
 const express = require('express');
-const {
-  create,
-  list,
-  getById,
-  update,
-  remove,
-  getDashboardStats
-} = require('../controllers/todoController');
 const { requireAuth } = require('../middleware/auth');
+const { asyncHandler } = require('../middleware/errorHandler');
 
-const router = express.Router();
+function createTodoRouter(todoController) {
+  const router = express.Router();
 
-// All todo operations require authentication
-router.use(requireAuth);
+  // All todo operations require authentication
+  router.use(requireAuth);
 
-router.post('/', create);
-router.get('/', list);
-router.get('/:id', getById);
-router.patch('/:id', update);
-router.delete('/:id', remove);
+  router.post('/', asyncHandler(todoController.create));
+  router.get('/', asyncHandler(todoController.list));
+  router.get('/:id', asyncHandler(todoController.getById));
+  router.patch('/:id', asyncHandler(todoController.update));
+  router.delete('/:id', asyncHandler(todoController.remove));
 
-module.exports = router;
+  return router;
+}
+
+module.exports = {
+  createTodoRouter
+};
+

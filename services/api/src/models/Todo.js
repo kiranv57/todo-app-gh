@@ -1,14 +1,23 @@
 const crypto = require('node:crypto');
+const { NotFoundError, ForbiddenError } = require('../errors');
 
 function generateObjectId() {
   return crypto.randomBytes(12).toString('hex');
 }
 
-// In-memory collection modeling MongoDB with index scanning and compound filtering
-const todos = new Map();
+/**
+ * TodoRepository Container Blueprint
+ * Encapsulates todo document persistence, sorting, compound query indexes, and tenant IDOR checks.
+ * Storage is injected into constructor to eliminate the module-level singleton trap.
+ */
+class TodoRepository {
+  #store;
 
-class TodoModel {
-  static create({ title, description = '', ownerId }) {
+  constructor(store = new Map()) {
+    this.#store = store;
+  }
+
+  create({ title, description = '', ownerId }) {
     if (!ownerId) {
       throw new Error('Todo owner is required');
     }
@@ -27,20 +36,20 @@ class TodoModel {
       updatedAt: now
     };
 
-    todos.set(_id, doc);
+    this.#store.set(_id, doc);
     return doc;
   }
 
-  static findById(id) {
-    return todos.get(id) || null;
+  findById(id) {
+    return this.#store.get(id) || null;
   }
 
-  static findByOwner({ ownerId, completed, page = 1, limit = 10 }) {
+  findByOwner({ ownerId, completed, page = 1, limit = 10 }) {
     if (!ownerId) return { data: [], total: 0, totalPages: 0, page, limit };
 
     // Compound index emulation: { owner: 1, completed: 1, createdAt: -1 }
     let list = [];
-    for (const doc of todos.values()) {
+    for (const doc of this.#store.values()) {
       if (doc.owner !== ownerId) continue;
       if (completed !== undefined && doc.completed !== completed) continue;
       list.push(doc);
@@ -63,19 +72,15 @@ class TodoModel {
     };
   }
 
-  static update({ id, ownerId, updates }) {
-    const doc = todos.get(id);
+  update({ id, ownerId, updates }) {
+    const doc = this.#store.get(id);
     if (!doc) {
-      const err = new Error('Todo not found');
-      err.status = 404;
-      throw err;
+      throw new NotFoundError('Todo not found');
     }
 
     // Multi-tenant security guard: IDOR prevention
     if (doc.owner !== ownerId) {
-      const err = new Error('Access denied: You do not own this todo item');
-      err.status = 403;
-      throw err;
+      throw new ForbiddenError('Access denied: You do not own this todo item');
     }
 
     if (updates.title !== undefined) {
@@ -89,33 +94,29 @@ class TodoModel {
     }
 
     doc.updatedAt = new Date().toISOString();
-    todos.set(id, doc);
+    this.#store.set(id, doc);
     return doc;
   }
 
-  static delete({ id, ownerId }) {
-    const doc = todos.get(id);
+  delete({ id, ownerId }) {
+    const doc = this.#store.get(id);
     if (!doc) {
-      const err = new Error('Todo not found');
-      err.status = 404;
-      throw err;
+      throw new NotFoundError('Todo not found');
     }
 
     if (doc.owner !== ownerId) {
-      const err = new Error('Access denied: You do not own this todo item');
-      err.status = 403;
-      throw err;
+      throw new ForbiddenError('Access denied: You do not own this todo item');
     }
 
-    todos.delete(id);
+    this.#store.delete(id);
     return { success: true, message: 'Todo deleted successfully' };
   }
 
-  static getStats(ownerId) {
+  getStats(ownerId) {
     let total = 0;
     let completed = 0;
 
-    for (const doc of todos.values()) {
+    for (const doc of this.#store.values()) {
       if (doc.owner === ownerId) {
         total++;
         if (doc.completed) {
@@ -135,12 +136,17 @@ class TodoModel {
     };
   }
 
-  static clear() {
-    todos.clear();
+  clear() {
+    this.#store.clear();
   }
 }
 
+const defaultTodoStore = new Map();
+const TodoModel = new TodoRepository(defaultTodoStore);
+
 module.exports = {
+  TodoRepository,
   TodoModel,
+  defaultTodoStore,
   generateObjectId
 };

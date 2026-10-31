@@ -1,5 +1,5 @@
 const { registerSchema, loginSchema } = require('@repo/shared');
-const { registerUser, loginUser, getUserById } = require('../services/authService');
+const { ValidationError, NotFoundError } = require('../errors');
 
 function formatZodIssues(error) {
   return error.issues.map((issue) => ({
@@ -8,90 +8,58 @@ function formatZodIssues(error) {
   }));
 }
 
-function register(req, res) {
-  const result = registerSchema.safeParse(req.body);
-  if (!result.success) {
-    return res.status(400).json({
-      success: false,
-      error: 'Validation failed',
-      code: 'VALIDATION_ERROR',
-      issues: formatZodIssues(result.error)
-    });
+/**
+ * AuthController Container Blueprint
+ * Orchestrates HTTP parsing, schema validation, and delegates to AuthService.
+ * Receives AuthService via constructor Dependency Injection.
+ */
+class AuthController {
+  #authService;
+
+  constructor(authService) {
+    if (!authService) throw new Error('AuthController requires AuthService instance');
+    this.#authService = authService;
   }
 
-  try {
-    const data = registerUser(result.data);
+  register = (req, res) => {
+    const result = registerSchema.safeParse(req.body);
+    if (!result.success) {
+      throw new ValidationError('Validation failed', formatZodIssues(result.error));
+    }
+
+    const data = this.#authService.registerUser(result.data);
     return res.status(201).json({
       success: true,
       data
     });
-  } catch (err) {
-    if (err.code === 11000) {
-      return res.status(409).json({
-        success: false,
-        error: err.message,
-        code: 'CONFLICT'
-      });
+  };
+
+  login = (req, res) => {
+    const result = loginSchema.safeParse(req.body);
+    if (!result.success) {
+      throw new ValidationError('Validation failed', formatZodIssues(result.error));
     }
-    return res.status(500).json({
-      success: false,
-      error: 'Internal server error',
-      code: 'INTERNAL_ERROR'
-    });
-  }
-}
 
-function login(req, res) {
-  const result = loginSchema.safeParse(req.body);
-  if (!result.success) {
-    return res.status(400).json({
-      success: false,
-      error: 'Validation failed',
-      code: 'VALIDATION_ERROR',
-      issues: formatZodIssues(result.error)
-    });
-  }
-
-  try {
-    const data = loginUser(result.data);
+    const data = this.#authService.loginUser(result.data);
     return res.status(200).json({
       success: true,
       data
     });
-  } catch (err) {
-    if (err.status === 401) {
-      return res.status(401).json({
-        success: false,
-        error: err.message,
-        code: 'UNAUTHORIZED'
-      });
+  };
+
+  me = (req, res) => {
+    const user = this.#authService.getUserById(req.user.id);
+    if (!user) {
+      throw new NotFoundError('User not found');
     }
-    return res.status(500).json({
-      success: false,
-      error: 'Internal server error',
-      code: 'INTERNAL_ERROR'
-    });
-  }
-}
 
-function me(req, res) {
-  const user = getUserById(req.user.id);
-  if (!user) {
-    return res.status(404).json({
-      success: false,
-      error: 'User not found',
-      code: 'NOT_FOUND'
+    return res.status(200).json({
+      success: true,
+      data: { user }
     });
-  }
-
-  return res.status(200).json({
-    success: true,
-    data: { user }
-  });
+  };
 }
 
 module.exports = {
-  register,
-  login,
-  me
+  AuthController
 };

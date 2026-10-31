@@ -1,27 +1,32 @@
 const crypto = require('node:crypto');
-
-// Simulated Mongoose / MongoDB collection state for isolated, deterministic execution
-const users = new Map();
+const { ConflictError, NotFoundError } = require('../errors');
 
 function generateObjectId() {
   return crypto.randomBytes(12).toString('hex');
 }
 
-class UserModel {
-  static create({ username, email, passwordHash }) {
-    // Unique email index constraint
-    for (const user of users.values()) {
-      if (user.email.toLowerCase() === email.toLowerCase()) {
-        const error = new Error('Email already registered');
-        error.code = 11000;
-        error.field = 'email';
-        throw error;
+/**
+ * UserRepository Container Blueprint
+ * Encapsulates user collection storage and query constraints.
+ * Avoids the module-level singleton trap by accepting a storage instance in its constructor.
+ */
+class UserRepository {
+  #store;
+
+  constructor(store = new Map()) {
+    this.#store = store;
+  }
+
+  create({ username, email, passwordHash }) {
+    const lowerEmail = email.toLowerCase();
+    const lowerUsername = username.toLowerCase();
+
+    for (const user of this.#store.values()) {
+      if (user.email.toLowerCase() === lowerEmail) {
+        throw new ConflictError('Email already registered');
       }
-      if (user.username.toLowerCase() === username.toLowerCase()) {
-        const error = new Error('Username already taken');
-        error.code = 11000;
-        error.field = 'username';
-        throw error;
+      if (user.username.toLowerCase() === lowerUsername) {
+        throw new ConflictError('Username already taken');
       }
     }
 
@@ -30,19 +35,19 @@ class UserModel {
       _id,
       id: _id,
       username,
-      email: email.toLowerCase(),
+      email: lowerEmail,
       passwordHash,
       createdAt: new Date().toISOString()
     };
 
-    users.set(_id, doc);
+    this.#store.set(_id, doc);
     return doc;
   }
 
-  static findByEmail(email) {
+  findByEmail(email) {
     if (!email) return null;
     const lower = email.toLowerCase();
-    for (const user of users.values()) {
+    for (const user of this.#store.values()) {
       if (user.email.toLowerCase() === lower) {
         return user;
       }
@@ -50,16 +55,21 @@ class UserModel {
     return null;
   }
 
-  static findById(id) {
-    return users.get(id) || null;
+  findById(id) {
+    return this.#store.get(id) || null;
   }
 
-  static clear() {
-    users.clear();
+  clear() {
+    this.#store.clear();
   }
 }
 
+const defaultUserStore = new Map();
+const UserModel = new UserRepository(defaultUserStore);
+
 module.exports = {
+  UserRepository,
   UserModel,
+  defaultUserStore,
   generateObjectId
 };

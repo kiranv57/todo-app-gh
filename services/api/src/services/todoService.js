@@ -1,47 +1,52 @@
-const { TodoModel } = require('../models/Todo');
+const { NotFoundError, ForbiddenError } = require('../errors');
 
-function createTodo({ title, description, ownerId }) {
-  return TodoModel.create({ title, description, ownerId });
-}
+/**
+ * TodoService Container Blueprint
+ * Encapsulates domain logic for todos, pagination policies, and dashboard metrics.
+ * Receives TodoRepository via constructor Dependency Injection.
+ */
+class TodoService {
+  #todoRepo;
 
-function listTodos({ ownerId, completed, page = 1, limit = 10 }) {
-  return TodoModel.findByOwner({ ownerId, completed, page, limit });
-}
-
-function getTodoById({ id, ownerId }) {
-  const todo = TodoModel.findById(id);
-  if (!todo) {
-    const err = new Error('Todo not found');
-    err.status = 404;
-    throw err;
+  constructor(todoRepo) {
+    if (!todoRepo) throw new Error('TodoService requires TodoRepository instance');
+    this.#todoRepo = todoRepo;
   }
 
-  if (todo.owner !== ownerId) {
-    const err = new Error('Access denied: You do not own this todo item');
-    err.status = 403;
-    throw err;
+  createTodo({ title, description, ownerId }) {
+    return this.#todoRepo.create({ title, description, ownerId });
   }
 
-  return todo;
-}
+  listTodos({ ownerId, completed, page = 1, limit = 10 }) {
+    return this.#todoRepo.findByOwner({ ownerId, completed, page, limit });
+  }
 
-function updateTodo({ id, ownerId, updates }) {
-  return TodoModel.update({ id, ownerId, updates });
-}
+  getTodoById({ id, ownerId }) {
+    const todo = this.#todoRepo.findById(id);
+    if (!todo) {
+      throw new NotFoundError('Todo not found');
+    }
 
-function deleteTodo({ id, ownerId }) {
-  return TodoModel.delete({ id, ownerId });
-}
+    if (todo.owner !== ownerId) {
+      throw new ForbiddenError('Access denied: You do not own this todo item');
+    }
 
-function getDashboardStats(ownerId) {
-  return TodoModel.getStats(ownerId);
+    return todo;
+  }
+
+  updateTodo({ id, ownerId, updates }) {
+    return this.#todoRepo.update({ id, ownerId, updates });
+  }
+
+  deleteTodo({ id, ownerId }) {
+    return this.#todoRepo.delete({ id, ownerId });
+  }
+
+  getDashboardStats(ownerId) {
+    return this.#todoRepo.getStats(ownerId);
+  }
 }
 
 module.exports = {
-  createTodo,
-  listTodos,
-  getTodoById,
-  updateTodo,
-  deleteTodo,
-  getDashboardStats
+  TodoService
 };

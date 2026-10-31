@@ -1,8 +1,12 @@
-const app = require('./app');
+const { createApp } = require('./app');
+const { createContainer } = require('./container');
 const { getEnv } = require('./config/env');
 
 try {
   const env = getEnv();
+  const container = createContainer({ jwtSecret: env.JWT_SECRET });
+  const app = createApp(container);
+
   const server = app.listen(env.PORT, () => {
     console.log(`[API Server] Booted successfully on port ${env.PORT}`);
   });
