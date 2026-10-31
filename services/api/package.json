@@ -1,0 +1,19 @@
+{
+  "name": "@repo/api",
+  "version": "1.0.0",
+  "private": true,
+  "main": "./src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node src/server.js",
+    "test": "node --test 'tests/**/*.test.js'",
+    "build": "exit 0"
+  },
+  "dependencies": {
+    "@repo/shared": "workspace:*",
+    "express": "^5.3.0"
+  },
+  "devDependencies": {
+    "supertest": "^7.3.1"
+  }
+}
