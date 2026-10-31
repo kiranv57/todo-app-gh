@@ -1,0 +1,17 @@
+# Universal .dockerignore (Clean-Room Boundary)
+node_modules
+**/node_modules
+.git
+.github
+.idea
+.vscode
+.turbo
+*.log
+coverage
+docs/qa
+docs/backlog
+.env
+.env.*
+.DS_Store
+dist
+build
