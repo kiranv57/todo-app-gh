@@ -152,3 +152,21 @@ Conventions: keys are stable, never renumbered. Points are Fibonacci; 8 means sp
   - [x] CI runs `node --test` for `packages/shared` and `services/api` independently.
   - [x] CI fails the build if any test fails.
   - [x] CI runs prettier check; fails if formatting is inconsistent.
+
+---
+
+## TODO-109 — Docker Containerization & CI Runner Physics
+
+- Type: chore, 3 points
+- Story: As an SRE, I want production-grade multi-stage Dockerfiles and a two-stage CI gating pipeline so containers run safely without root privileges and builds execute with optimal layer caching.
+- Blast radius: `.dockerignore`, `services/api/Dockerfile`, `apps/web/Dockerfile`, `scripts/`, `.github/workflows/ci.yml`
+- Out of scope: application business logic, shared contracts, React components
+- AC:
+  - [ ] `.dockerignore` prevents local incubator leaks (`node_modules`, `.git`, `.env*`, test logs).
+  - [ ] Multi-stage Dockerfiles implement the Layer Cache Invariant (manifests copied before source code).
+  - [ ] Production runner stages drop root: dedicated `apprunner` (UID 1001, GID 1001) created and switched to via `USER`.
+  - [ ] Atomic file ownership via `COPY --chown=apprunner:nodejs`.
+  - [ ] PID 1 zombie signal handling configured via `tini`.
+  - [ ] Automated gatekeeper script `scripts/check-docker-hygiene.js` verifies non-root user and layer order.
+  - [ ] Docker smoke test pattern script `scripts/docker-smoke.sh` verifies boot and `/health` probe.
+  - [ ] GitHub Actions CI workflow upgraded with concurrency throttling and 2-stage fast/heavy runner waterfall.
