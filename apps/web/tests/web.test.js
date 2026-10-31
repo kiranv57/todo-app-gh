@@ -36,4 +36,23 @@ test('TODO-106, 107: Web Frontend Server & SPA Delivery', async (t) => {
     assert.equal(res.status, 200);
     assert.ok(res.text.includes('tasksphere_jwt'));
   });
+
+  await t.test('GET /store.js, /reducer.js, /api.js, /actions.js deliver tier architecture modules', async () => {
+    const resStore = await request(app).get('/store.js');
+    assert.equal(resStore.status, 200);
+    assert.ok(resStore.text.includes('createStore'));
+
+    const resReducer = await request(app).get('/reducer.js');
+    assert.equal(resReducer.status, 200);
+    assert.ok(resReducer.text.includes('ActionTypes'));
+
+    const resApi = await request(app).get('/api.js');
+    assert.equal(resApi.status, 200);
+    assert.ok(resApi.text.includes('createApiClient'));
+
+    const resActions = await request(app).get('/actions.js');
+    assert.equal(resActions.status, 200);
+    assert.ok(resActions.text.includes('createActions'));
+  });
 });
+

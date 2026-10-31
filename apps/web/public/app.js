@@ -1,19 +1,34 @@
-// Enterprise TaskSphere Frontend Application
+/**
+ * Enterprise TaskSphere Client Application
+ * Follows 6-Tier Reactive State Architecture:
+ * - Tier 1: State Storage & Exposure (store.js)
+ * - Tier 2: Business Logic & Pure Reducer (reducer.js)
+ * - Tier 3: Async Boundary & AbortController Signal Shielding (api.js)
+ * - Tier 4: Custom Hooks / Stateful Action Orchestrators (actions.js)
+ * - Tier 5: Event Handlers (Explicit DOM triggers)
+ * - Tier 6: Declarative UI Projection (Subscribing to Store)
+ * Session Storage Token Key: tasksphere_jwt
+ */
 (function () {
   'use strict';
 
-  // State Store
-  const state = {
-    token: localStorage.getItem('tasksphere_jwt') || null,
-    user: null,
-    filter: 'all', // 'all' | 'active' | 'completed'
-    page: 1,
-    limit: 5,
-    totalPages: 1,
-    totalItems: 0
-  };
+  const { createStore, rootReducer, createApiClient, createActions, ActionTypes } = window.TaskSphere;
 
-  // DOM Elements
+  // Tier 1 & Composition Root for Client
+  const store = createStore(rootReducer);
+  const api = createApiClient();
+  const actions = createActions({
+    store,
+    api,
+    ActionTypes,
+    storage: localStorage
+  });
+
+  // Expose on window for integration and end-to-end auditability
+  window.TaskSphere.storeInstance = store;
+  window.TaskSphere.actionsInstance = actions;
+
+  // DOM References
   const authSection = document.getElementById('auth-section');
   const dashboardSection = document.getElementById('dashboard-section');
   const userProfile = document.getElementById('user-profile');
@@ -37,133 +52,101 @@
   const btnNextPage = document.getElementById('btn-next-page');
   const currentPageLabel = document.getElementById('current-page-label');
 
-  // Metrics Elements
   const metricTotal = document.getElementById('metric-total');
   const metricCompleted = document.getElementById('metric-completed');
   const metricIncomplete = document.getElementById('metric-incomplete');
   const metricRate = document.getElementById('metric-rate');
 
-  // API Client Helper
-  async function apiCall(endpoint, options = {}) {
-    const headers = {
-      'Content-Type': 'application/json',
-      ...(options.headers || {})
-    };
+  // =========================================================================
+  // Tier 6: Declarative UI Projection (Pure function of State)
+  // =========================================================================
+  function render(state) {
+    // 1. Auth Section vs Dashboard Visibility
+    const isAuthenticated = state.auth.status === 'authenticated' && Boolean(state.auth.user);
 
-    if (state.token) {
-      headers.Authorization = `Bearer ${state.token}`;
-    }
-
-    const response = await fetch(`/api/proxy${endpoint}`, {
-      ...options,
-      headers
-    });
-
-    const data = await response.json();
-    if (!response.ok) {
-      const err = new Error(data.error || 'API Request failed');
-      err.status = response.status;
-      err.data = data;
-      throw err;
-    }
-
-    return data;
-  }
-
-  // Auth UI Helpers
-  function showAlert(msg) {
-    authAlert.textContent = msg;
-    authAlert.className = 'alert alert-error';
-    authAlert.classList.remove('hidden');
-  }
-
-  function hideAlert() {
-    authAlert.classList.add('hidden');
-  }
-
-  function setAuthenticated(token, user) {
-    state.token = token;
-    state.user = user;
-    if (token) {
-      localStorage.setItem('tasksphere_jwt', token);
-    } else {
-      localStorage.removeItem('tasksphere_jwt');
-    }
-
-    renderView();
-  }
-
-  function renderView() {
-    if (state.token && state.user) {
+    if (isAuthenticated) {
       authSection.classList.add('hidden');
       dashboardSection.classList.remove('hidden');
       userProfile.classList.remove('hidden');
-      userBadge.textContent = `${state.user.username} (${state.user.email})`;
-
-      fetchDashboardStats();
-      fetchTodos();
+      userBadge.textContent = `${state.auth.user.username} (${state.auth.user.email})`;
     } else {
       authSection.classList.remove('hidden');
       dashboardSection.classList.add('hidden');
       userProfile.classList.add('hidden');
     }
-  }
 
-  // Dashboard Data Fetching
-  async function fetchDashboardStats() {
-    try {
-      const res = await apiCall('/dashboard');
-      if (res.success && res.data) {
-        metricTotal.textContent = res.data.total;
-        metricCompleted.textContent = res.data.completed;
-        metricIncomplete.textContent = res.data.incomplete;
-        metricRate.textContent = `${res.data.completionRate}%`;
+    // 2. Alert Rendering
+    if (state.ui.alert) {
+      authAlert.textContent = state.ui.alert.message || state.ui.alert;
+      authAlert.className = `alert alert-${state.ui.alert.type || 'error'}`;
+      authAlert.classList.remove('hidden');
+    } else {
+      authAlert.classList.add('hidden');
+    }
+
+    // 3. Tab State
+    if (state.ui.activeTab === 'login') {
+      tabLogin.classList.add('active');
+      tabRegister.classList.remove('active');
+      formLogin.classList.remove('hidden');
+      formRegister.classList.add('hidden');
+    } else {
+      tabRegister.classList.add('active');
+      tabLogin.classList.remove('active');
+      formRegister.classList.remove('hidden');
+      formLogin.classList.add('hidden');
+    }
+
+    // 4. Metrics Projection
+    const stats = state.dashboard.stats;
+    metricTotal.textContent = stats.total;
+    metricCompleted.textContent = stats.completed;
+    metricIncomplete.textContent = stats.incomplete;
+    metricRate.textContent = `${stats.completionRate}%`;
+
+    // 5. Filter Buttons Projection
+    filterButtons.forEach((btn) => {
+      if (btn.dataset.filter === state.todos.filter) {
+        btn.classList.add('active');
+      } else {
+        btn.classList.remove('active');
       }
-    } catch (err) {
-      console.error('Failed to load dashboard metrics:', err);
-    }
-  }
+    });
 
-  async function fetchTodos() {
-    let url = `/todos?page=${state.page}&limit=${state.limit}`;
-    if (state.filter === 'active') {
-      url += '&completed=false';
-    } else if (state.filter === 'completed') {
-      url += '&completed=true';
-    }
+    // 6. Pagination Controls Projection
+    paginationSummary.textContent = `Showing page ${state.todos.page} of ${state.todos.totalPages} (${state.todos.total} total items)`;
+    currentPageLabel.textContent = `Page ${state.todos.page}`;
+    btnPrevPage.disabled = state.todos.page <= 1;
+    btnNextPage.disabled = state.todos.page >= state.todos.totalPages;
 
-    try {
-      const res = await apiCall(url);
-      renderTodoList(res.data || []);
-      renderPagination(res.pagination || {});
-    } catch (err) {
-      console.error('Failed to load todos:', err);
-      if (err.status === 401) {
-        setAuthenticated(null, null);
-      }
-    }
+    // 7. Todo List Items Projection
+    renderTodoList(state.todos.items);
   }
 
   function renderTodoList(items) {
     todoList.innerHTML = '';
 
-    if (!items.length) {
+    if (!items || items.length === 0) {
       todoList.innerHTML = `<div class="empty-state">No tasks found for current filter.</div>`;
       return;
     }
 
     items.forEach((item) => {
+      const itemId = item._id || item.id;
       const card = document.createElement('div');
       card.className = 'todo-item';
 
       const main = document.createElement('div');
       main.className = 'todo-main';
 
+      // Explicit Trigger: Checkbox Toggle
       const checkbox = document.createElement('input');
       checkbox.type = 'checkbox';
       checkbox.className = 'todo-checkbox';
       checkbox.checked = Boolean(item.completed);
-      checkbox.addEventListener('change', () => toggleTodo(item._id, checkbox.checked));
+      checkbox.addEventListener('change', () => {
+        actions.toggleTodo(itemId, item.completed);
+      });
 
       const textContainer = document.createElement('div');
       textContainer.className = 'todo-text';
@@ -183,120 +166,55 @@
       main.appendChild(checkbox);
       main.appendChild(textContainer);
 
-      const actions = document.createElement('div');
-      actions.className = 'todo-actions';
+      const actionsDiv = document.createElement('div');
+      actionsDiv.className = 'todo-actions';
 
+      // Explicit Trigger: Delete Task
       const deleteBtn = document.createElement('button');
       deleteBtn.className = 'btn btn-sm btn-danger';
       deleteBtn.textContent = 'Delete';
-      deleteBtn.addEventListener('click', () => deleteTodo(item._id));
+      deleteBtn.addEventListener('click', () => {
+        if (confirm('Are you sure you want to delete this task?')) {
+          actions.deleteTodo(itemId);
+        }
+      });
 
-      actions.appendChild(deleteBtn);
+      actionsDiv.appendChild(deleteBtn);
 
       card.appendChild(main);
-      card.appendChild(actions);
-
+      card.appendChild(actionsDiv);
       todoList.appendChild(card);
     });
   }
 
-  function renderPagination(meta) {
-    state.totalPages = meta.totalPages || 1;
-    state.totalItems = meta.total || 0;
+  // =========================================================================
+  // Tier 5: Event Handlers (Explicit Triggers grabbing data from DOM events)
+  // =========================================================================
 
-    paginationSummary.textContent = `Showing page ${meta.page || 1} of ${state.totalPages} (${state.totalItems} total items)`;
-    currentPageLabel.textContent = `Page ${meta.page || 1}`;
+  // Auth Tab Navigation Triggers
+  tabLogin.addEventListener('click', () => actions.setTab('login'));
+  tabRegister.addEventListener('click', () => actions.setTab('register'));
 
-    btnPrevPage.disabled = state.page <= 1;
-    btnNextPage.disabled = state.page >= state.totalPages;
-  }
-
-  // Mutation Handlers
-  async function toggleTodo(id, newStatus) {
-    try {
-      await apiCall(`/todos/${id}`, {
-        method: 'PATCH',
-        body: JSON.stringify({ completed: newStatus })
-      });
-      fetchDashboardStats();
-      fetchTodos();
-    } catch (err) {
-      alert(`Failed to update task: ${err.message}`);
-      fetchTodos();
-    }
-  }
-
-  async function deleteTodo(id) {
-    if (!confirm('Are you sure you want to delete this task?')) return;
-
-    try {
-      await apiCall(`/todos/${id}`, {
-        method: 'DELETE'
-      });
-      fetchDashboardStats();
-      fetchTodos();
-    } catch (err) {
-      alert(`Failed to delete task: ${err.message}`);
-    }
-  }
-
-  // Event Listeners: Tabs
-  tabLogin.addEventListener('click', () => {
-    tabLogin.classList.add('active');
-    tabRegister.classList.remove('active');
-    formLogin.classList.remove('hidden');
-    formRegister.classList.add('hidden');
-    hideAlert();
-  });
-
-  tabRegister.addEventListener('click', () => {
-    tabRegister.classList.add('active');
-    tabLogin.classList.remove('active');
-    formRegister.classList.remove('hidden');
-    formLogin.classList.add('hidden');
-    hideAlert();
-  });
-
-  // Event Listeners: Login Submit
+  // Login Form Submission Trigger
   formLogin.addEventListener('submit', async (e) => {
     e.preventDefault();
-    hideAlert();
-
-    const email = document.getElementById('login-email').value;
+    actions.clearAlert();
+    const email = document.getElementById('login-email').value.trim();
     const password = document.getElementById('login-password').value;
-
-    try {
-      const res = await apiCall('/auth/login', {
-        method: 'POST',
-        body: JSON.stringify({ email, password })
-      });
-      setAuthenticated(res.data.token, res.data.user);
-    } catch (err) {
-      showAlert(err.message || 'Login failed');
-    }
+    await actions.login({ email, password });
   });
 
-  // Event Listeners: Register Submit
+  // Register Form Submission Trigger
   formRegister.addEventListener('submit', async (e) => {
     e.preventDefault();
-    hideAlert();
-
-    const username = document.getElementById('reg-username').value;
-    const email = document.getElementById('reg-email').value;
+    actions.clearAlert();
+    const username = document.getElementById('reg-username').value.trim();
+    const email = document.getElementById('reg-email').value.trim();
     const password = document.getElementById('reg-password').value;
-
-    try {
-      const res = await apiCall('/auth/register', {
-        method: 'POST',
-        body: JSON.stringify({ username, email, password })
-      });
-      setAuthenticated(res.data.token, res.data.user);
-    } catch (err) {
-      showAlert(err.message || 'Registration failed');
-    }
+    await actions.register({ username, email, password });
   });
 
-  // Event Listeners: Create Todo Submit
+  // Create Todo Submission Trigger
   formCreateTodo.addEventListener('submit', async (e) => {
     e.preventDefault();
     const title = todoTitle.value.trim();
@@ -304,68 +222,44 @@
 
     if (!title) return;
 
-    try {
-      await apiCall('/todos', {
-        method: 'POST',
-        body: JSON.stringify({ title, description })
-      });
-      todoTitle.value = '';
-      todoDesc.value = '';
-      fetchDashboardStats();
-      fetchTodos();
-    } catch (err) {
-      alert(`Error creating task: ${err.message}`);
-    }
+    await actions.createTodo({ title, description });
+    todoTitle.value = '';
+    todoDesc.value = '';
   });
 
-  // Event Listeners: Filters
+  // Filter Buttons Trigger
   filterButtons.forEach((btn) => {
     btn.addEventListener('click', () => {
-      filterButtons.forEach((b) => b.classList.remove('active'));
-      btn.classList.add('active');
-      state.filter = btn.dataset.filter;
-      state.page = 1;
-      fetchTodos();
+      actions.setFilter(btn.dataset.filter);
     });
   });
 
-  // Event Listeners: Pagination
+  // Pagination Triggers
   btnPrevPage.addEventListener('click', () => {
-    if (state.page > 1) {
-      state.page--;
-      fetchTodos();
-    }
+    const { page } = store.getState().todos;
+    if (page > 1) actions.setPage(page - 1);
   });
 
   btnNextPage.addEventListener('click', () => {
-    if (state.page < state.totalPages) {
-      state.page++;
-      fetchTodos();
-    }
+    const { page, totalPages } = store.getState().todos;
+    if (page < totalPages) actions.setPage(page + 1);
   });
 
-  // Event Listeners: Logout
+  // Logout Trigger
   btnLogout.addEventListener('click', () => {
-    setAuthenticated(null, null);
+    actions.logout();
   });
 
-  // App Initialization: Attempt session restore
-  async function init() {
-    if (state.token) {
-      try {
-        const res = await apiCall('/auth/me');
-        if (res.success && res.data) {
-          setAuthenticated(state.token, res.data.user);
-          return;
-        }
-      } catch (err) {
-        console.warn('Session expired or invalid, signing out.');
-      }
-      setAuthenticated(null, null);
-    } else {
-      renderView();
-    }
-  }
+  // =========================================================================
+  // Reactive Loop Attachment & Hydration
+  // =========================================================================
+  store.subscribe(() => {
+    render(store.getState());
+  });
 
-  init();
+  // Initial render with blank/initial state
+  render(store.getState());
+
+  // Attempt automatic session restore from persisted JWT token
+  actions.restoreSession();
 })();
