@@ -25,10 +25,16 @@ test('TODO-106, 107: Web Frontend Server & SPA Delivery', async (t) => {
     assert.ok(res.text.includes('TaskSphere Enterprise'));
   });
 
-  await t.test('GET /styles.css serves valid CSS styles', async () => {
+  await t.test('GET /styles.css serves 3-layer precursor tokens, clamp() typography and responsive cascade', async () => {
     const res = await request(app).get('/styles.css');
     assert.equal(res.status, 200);
-    assert.ok(res.text.includes('--bg-primary'));
+    assert.ok(res.text.includes('--space-2xs'), 'Must define spacing precursor scale');
+    assert.ok(res.text.includes('clamp('), 'Must define fluid typography via clamp()');
+    assert.ok(res.text.includes('--metrics-grid-cols'), 'Must define dynamic layout precursors');
+    assert.ok(res.text.includes('@media (min-width: 640px)'), 'Must define mobile-first tablet cascade');
+    assert.ok(res.text.includes('@media (min-width: 768px)'), 'Must define mobile-first desktop cascade');
+    assert.ok(res.text.includes('.metrics-grid'), 'Must include semantic layout consumer');
+    assert.ok(res.text.includes('.todo-item'), 'Must include semantic component consumer');
   });
 
   await t.test('GET /app.js serves client side SPA script', async () => {
