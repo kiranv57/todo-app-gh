@@ -4,6 +4,21 @@ All notable changes to the TaskSphere Todo Platform are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2026-10-31
+
+### Added
+- **Design System: Variable-Driven Precursor Tokens (`TODO-112`)**:
+  - Implemented full **3-Layer Precursor Token Architecture** in `apps/web/public/styles.css`.
+  - Layer 1: `:root` mathematical precursor scales for spacing (`--space-2xs` to `--space-2xl`), fluid typography using `clamp()` (`--font-xs` to `--font-hero`), semantic colors, radius scale, and elevation shadows.
+  - Layer 2: Mobile-First Responsive Variable Cascade (`@media (min-width: 640px)`, `768px`, `1024px`) dynamically overriding precursor layout tokens without markup class spread.
+  - Layer 3: Semantic consumer classes (`.app-layout`, `.surface-card`, `.metrics-grid`, `.btn-primary`) consuming CSS variables.
+- **DevOps: 3-Trigger CI/CD Pipeline & Inode Architecture (`TODO-113`)**:
+  - **Trigger 1 (Local Laptop Guard)**: Created `scripts/pre-commit-gate.js` enforcing zero-leak credential checks, `.env.example` validation, and Docker hygiene before commit inodes can be written.
+  - **Trigger 2 (Fast PR Cloud Gate)**: Upgraded `.github/workflows/ci.yml` with Stage 3 delta compile, Stage 4 Docker precursor checks, and Stage 5 container certification (<150MB byte budget & detached boot `/health` smoke test).
+  - **Trigger 3 (Heavy Integration & Release Gate)**: Configured release workflow on merge to `main` with multi-tenant E2E verification and immutable canary deployments pinned strictly to Git commit SHA (`task-sphere-api:${{ github.sha }}`), strictly banning `:latest`.
+  - **DevOps File Authoring**: Authored `docker-compose.yml` demonstrating both the **Indie Local Dev archetype** (live volume bind-mounts, hot-reloading) and **Corporate Production archetype**.
+  - **Architecture Documentation**: Authored `docs/architecture/0002-frozen-inode-and-pipeline-physics.md` explaining the system through the Frozen Inode lens across Git versioning, compiler delta caching, OverlayFS container layers, and ephemeral runner lifecycles.
+
 ## [1.1.0] - 2026-10-31
 
 ### Added

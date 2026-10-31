@@ -216,10 +216,10 @@ Conventions: keys are stable, never renumbered. Points are Fibonacci; 8 means sp
 - Blast radius: `apps/web/public/styles.css`, `apps/web/tests/web.test.js`
 - Out of scope: backend logic, Dockerfiles
 - AC:
-  - [ ] Layer 1 Precursor Tokens in `:root`: spacing scale (`--space-2xs` to `--space-2xl`), fluid typography using `clamp()` (`--font-xs` to `--font-hero`), semantic colors, radius scale, and elevation shadows.
-  - [ ] Layer 2 Mobile-First Responsive Cascade: media query blocks (`@media (min-width: 640px)`, `768px`, `1024px`) dynamically overriding precursor layout tokens.
-  - [ ] Layer 3 Semantic Consumers: classes `.app-layout`, `.surface-card`, `.metrics-grid`, `.btn-primary`, `.form-group` consuming precursor variables.
-  - [ ] Automated tests verify style delivery and design token existence.
+  - [x] Layer 1 Precursor Tokens in `:root`: spacing scale (`--space-2xs` to `--space-2xl`), fluid typography using `clamp()` (`--font-xs` to `--font-hero`), semantic colors, radius scale, and elevation shadows.
+  - [x] Layer 2 Mobile-First Responsive Cascade: media query blocks (`@media (min-width: 640px)`, `768px`, `1024px`) dynamically overriding precursor layout tokens.
+  - [x] Layer 3 Semantic Consumers: classes `.app-layout`, `.surface-card`, `.metrics-grid`, `.btn-primary`, `.form-group` consuming precursor variables.
+  - [x] Automated tests verify style delivery and design token existence.
 
 ---
 
@@ -230,9 +230,10 @@ Conventions: keys are stable, never renumbered. Points are Fibonacci; 8 means sp
 - Blast radius: `scripts/pre-commit-gate.js`, `.github/workflows/ci.yml`, `docker-compose.yml`, `docs/architecture/0002-frozen-inode-and-pipeline-physics.md`
 - Out of scope: application business logic
 - AC:
-  - [ ] Trigger 1 (Local Laptop Guard): `scripts/pre-commit-gate.js` scans staged files for leaked secrets, ensures required envs are documented, and runs Docker hygiene checks before commit inodes can be created.
-  - [ ] Trigger 2 (PR Cloud Gate): `.github/workflows/ci.yml` validates code delta, executes tests, and enforces container certification (<150MB image size budget & detached boot smoke test).
-  - [ ] Trigger 3 (Release Gate on `main` merge): `.github/workflows/ci.yml` runs heavy release verification and executes canary build pinned strictly to `${{ github.sha }}`, explicitly rejecting `:latest`.
-  - [ ] DevOps File Authoring: `docker-compose.yml` provides both the Indie Local Dev archetype (live bind-mounts for instant hot-reload) and Corporate Production archetype.
-  - [ ] Frozen Inode Architecture: `docs/architecture/0002-frozen-inode-and-pipeline-physics.md` details how Git tracking, Turborepo delta compilation, OverlayFS container layers, and ephemeral runners operate as frozen inodes and mutable pointer dictionaries.
+  - [x] Trigger 1 (Local Laptop Guard): `scripts/pre-commit-gate.js` scans staged files for leaked secrets, ensures required envs are documented, and runs Docker hygiene checks before commit inodes can be created.
+  - [x] Trigger 2 (PR Cloud Gate): `.github/workflows/ci.yml` validates code delta, executes tests, and enforces container certification (<150MB image size budget & detached boot smoke test).
+  - [x] Trigger 3 (Release Gate on `main` merge): `.github/workflows/ci.yml` runs heavy release verification and executes canary build pinned strictly to `${{ github.sha }}`, explicitly rejecting `:latest`.
+  - [x] DevOps File Authoring: `docker-compose.yml` provides both the Indie Local Dev archetype (live bind-mounts for instant hot-reload) and Corporate Production archetype.
+  - [x] Frozen Inode Architecture: `docs/architecture/0002-frozen-inode-and-pipeline-physics.md` details how Git tracking, Turborepo delta compilation, OverlayFS container layers, and ephemeral runners operate as frozen inodes and mutable pointer dictionaries.
+
 
