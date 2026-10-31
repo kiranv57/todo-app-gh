@@ -1,0 +1,58 @@
+name: Continuous Integration Quality Gate
+
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+    branches: [main, dev]
+
+jobs:
+  test-shared-contracts:
+    name: Shared Contracts Validation (@repo/shared)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Execute Contracts Test Suite
+        working-directory: packages/shared
+        run: node --test 'tests/**/*.test.js'
+
+  test-backend-api:
+    name: Backend API Suite (@repo/api)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Execute API Integration Suite
+        working-directory: services/api
+        env:
+          JWT_SECRET: ci-test-runner-cryptographic-signing-key-32-chars
+        run: node --test 'tests/**/*.test.js'
+
+  test-frontend-web:
+    name: Web Frontend Delivery Suite (@repo/web)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Execute Web SPA Suite
+        working-directory: apps/web
+        run: node --test 'tests/**/*.test.js'
