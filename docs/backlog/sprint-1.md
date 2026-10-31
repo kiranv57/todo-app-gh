@@ -170,3 +170,39 @@ Conventions: keys are stable, never renumbered. Points are Fibonacci; 8 means sp
   - [x] Automated gatekeeper script `scripts/check-docker-hygiene.js` verifies non-root user and layer order.
   - [x] Docker smoke test pattern script `scripts/docker-smoke.sh` verifies boot and `/health` probe.
   - [x] GitHub Actions CI workflow upgraded with concurrency throttling and 2-stage fast/heavy runner waterfall.
+
+---
+
+## TODO-110 — Backend Architecture: Container Blueprints, Composition Root DI, and Centralized Error Handling
+
+- Type: refactor, 5 points
+- Story: As a platform architect, I want backend services and repositories encapsulated in Container Blueprints with Dependency Injection at a Composition Root, backed by a Centralized Error Handling middleware, eliminating module-level singleton traps and per-controller try/catches.
+- Blast radius: `services/api/src/errors/`, `services/api/src/middleware/errorHandler.js`, `services/api/src/models/`, `services/api/src/services/`, `services/api/src/controllers/`, `services/api/src/container.js`, `services/api/src/app.js`
+- Out of scope: shared contracts, web frontend, Docker configuration
+- Depends on: TODO-102, TODO-103, TODO-104, TODO-105
+- AC:
+  - [ ] Typed Domain Errors (`AppError`, `ValidationError` 400, `UnauthorizedError` 401, `ForbiddenError` 403, `NotFoundError` 404, `ConflictError` 409).
+  - [ ] Centralized Error Middleware registered as the final Express layer; formats errors consistently into `{ success: false, error, code, issues? }`.
+  - [ ] Controllers are thin orchestrators: remove per-route try/catches; use an `asyncHandler` wrapper forwarding thrown errors to `next()`.
+  - [ ] Container Blueprints: `UserRepository`, `TodoRepository`, `AuthService`, and `TodoService` are Classes/Factories taking dependencies via constructors/closures.
+  - [ ] Module-level singleton state in models eliminated: repositories take an explicit Storage adapter (`new Map()` or DB client).
+  - [ ] Composition Root in `services/api/src/container.js` instantiates the entire dependency graph bottom-up and exposes ready-to-mount routes.
+  - [ ] All 28 existing backend integration tests continue to pass with zero regressions.
+
+---
+
+## TODO-111 — Frontend Architecture: 6-Tier Reactive Store, Custom Hooks, AbortController, and Declarative Components
+
+- Type: refactor, 5 points
+- Story: As a frontend engineer, I want the web application structured following the 6-Tier Reactive Store Architecture, with explicit state mutations, AbortController cancellation against network race conditions, and declarative component rendering.
+- Blast radius: `apps/web/public/`, `apps/web/src/`, `apps/web/tests/`
+- Out of scope: backend services, shared contracts
+- Depends on: TODO-106, TODO-107, TODO-110
+- AC:
+  - [ ] Tier 1: Dedicated State Store managing `{ auth, todos, stats, filter, pagination }`.
+  - [ ] Tier 2: Pure State Mutations / Reducers (`SET_AUTH`, `SET_TODOS`, `OPTIMISTIC_TOGGLE`, `ROLLBACK_TOGGLE`).
+  - [ ] Tier 3: Async Boundary with `AbortController` cancellation signal to prevent out-of-order responses on rapid filter tab clicks.
+  - [ ] Tier 4: Custom Hooks / Stateful Wrappers (`useAuth`, `useTodos`, `useDashboardStats`) returning `{ state, actions }`.
+  - [ ] Tier 5: Thin Event Handlers on components delegating directly to Tier 4 actions.
+  - [ ] Tier 6: Declarative UI rendering where view updates strictly derive from state transitions.
+  - [ ] All web delivery tests continue to pass.
