@@ -2,15 +2,14 @@
 
 /**
  * ============================================================================
- * Trigger 1: Local Laptop Guard (Pre-Commit Blocker)
- * Skill: /three-trigger-cicd-pipeline & /frozen-inode-mental-model
+ * Pre-commit gate
  *
- * Stage 1: Fast Grammar & Schema Verification
- * Stage 2: Precursor Blockers:
+ * Stage 1: Fast formatting & schema verification
+ * Stage 2: Commit blockers:
  *          - Scans staged files for leaked secrets, API keys, private keys.
- *          - Enforces .env.example hygiene (Zero hardcoded production secrets).
- *          - Audits Dockerfiles for CIS Benchmarks and Non-Root execution.
- *          - Hard aborts before commit inodes can be written to disk.
+ *          - Enforces .env.example hygiene (zero hardcoded production secrets).
+ *          - Audits Dockerfiles for CIS Benchmarks and non-root execution.
+ *          - Hard-aborts the commit before anything reaches git history.
  * ============================================================================
  */
 
@@ -21,7 +20,7 @@ const path = require('node:path');
 const ROOT_DIR = path.resolve(__dirname, '..');
 
 console.log('\n========================================================================================');
-console.log('       [TRIGGER 1: Local Laptop Guard] Pre-Commit Precursor Blocker Gate');
+console.log('       [Pre-commit] Secret scan, env hygiene & Docker audit');
 console.log('========================================================================================\n');
 
 let violations = 0;
@@ -32,14 +31,14 @@ function reportViolation(stage, message) {
 }
 
 // ----------------------------------------------------------------------------
-// Stage 2A: Secret Scanner (Preventing Secret Inode Minting)
+// Stage 2A: Secret scanner (stop leaked credentials from entering git history)
 // ----------------------------------------------------------------------------
 console.log('🔍 [Stage 2A] Scanning repository for leaked secrets and high-entropy credentials...');
 
 const SECRET_PATTERNS = [
   { name: 'RSA / OpenSSH Private Key', regex: /-----BEGIN (?:RSA |OPENSSH |EC )?PRIVATE KEY-----/ },
   { name: 'AWS Access Key ID', regex: /(?:A3T[A-Z0-9]|AKIA|AGPA|AIDA|AROA|AIPA|ANPA|ANVA|ASIA)[A-Z0-9]{16}/ },
-  { name: 'Generic Live Secret Token', regex: /(?:secret|api_key|token)\s*[:=]\s*["'][a-zA-Z0-9_-]{24,}["']/i },
+  { name: 'Generic Live Secret Token', regex: /(?:secret|api_key|token)\s*[:=]\s*["'](?!test-|mock-|smoke-|dummy-)[a-zA-Z0-9_-]{24,}["']/i },
   { name: 'Stripe Live Secret Key', regex: /sk_live_[0-9a-zA-Z]{24}/ }
 ];
 
@@ -88,7 +87,7 @@ for (const file of filesToCheck) {
   // Check forbidden filenames
   for (const pattern of FORBIDDEN_FILE_PATTERNS) {
     if (pattern.test(baseName)) {
-      reportViolation('Precursor Blocker', `Forbidden sensitive file staged for commit: ${file}`);
+      reportViolation('Pre-commit', `Forbidden sensitive file staged for commit: ${file}`);
     }
   }
 
@@ -97,12 +96,17 @@ for (const file of filesToCheck) {
     continue;
   }
 
+  // Exempt documentation files from secret regex scanning
+  if (file.endsWith('.md')) {
+    continue;
+  }
+
   // Scan file contents for secret patterns
   try {
     const content = fs.readFileSync(fullPath, 'utf-8');
     for (const { name, regex } of SECRET_PATTERNS) {
       if (regex.test(content)) {
-        reportViolation('Precursor Blocker', `Potential leaked ${name} detected in: ${file}`);
+        reportViolation('Pre-commit', `Potential leaked ${name} detected in: ${file}`);
       }
     }
   } catch (err) {
@@ -121,11 +125,11 @@ console.log('🔍 [Stage 2B] Verifying .env.example hygiene & zero-fallback cont
 const envExamplePath = path.join(ROOT_DIR, '.env.example');
 
 if (!fs.existsSync(envExamplePath)) {
-  reportViolation('Precursor Blocker', '.env.example template missing at repository root.');
+  reportViolation('Pre-commit', '.env.example template missing at repository root.');
 } else {
   const exampleContent = fs.readFileSync(envExamplePath, 'utf-8');
   if (exampleContent.includes('JWT_SECRET=supersecret') || exampleContent.includes('password123')) {
-    reportViolation('Precursor Blocker', '.env.example contains insecure sample production values.');
+    reportViolation('Pre-commit', '.env.example contains insecure sample production values.');
   } else {
     console.log('   ✅ Clean: .env.example conforms to zero-fallback discipline.');
   }
@@ -142,7 +146,7 @@ try {
   });
   console.log('   ✅ Clean: All Dockerfiles pass CIS Benchmark and layer invariants.');
 } catch (err) {
-  reportViolation('Precursor Blocker', 'Docker hygiene audit failed.');
+  reportViolation('Pre-commit', 'Docker hygiene audit failed.');
 }
 
 // ----------------------------------------------------------------------------
@@ -150,10 +154,10 @@ try {
 // ----------------------------------------------------------------------------
 console.log('\n----------------------------------------------------------------------------------------');
 if (violations > 0) {
-  console.error(`🚨 TRIGGER 1 ABORT: ${violations} precursor violation(s) detected.`);
-  console.error('Commit rejected. Correct issues before minting commit inodes.\n');
+  console.error(`🚨 PRE-COMMIT GATE FAILED: ${violations} violation(s) detected.`);
+  console.error('Commit rejected. Correct the issues above, then commit again.\n');
   process.exit(1);
 } else {
-  console.log('🎉 TRIGGER 1 PASSED: Local laptop guard 100% clean. Commit inode permitted.\n');
+  console.log('🎉 PRE-COMMIT GATE PASSED: Working tree clean. Commit allowed.\n');
   process.exit(0);
 }

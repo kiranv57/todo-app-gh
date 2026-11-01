@@ -8,7 +8,7 @@ function sanitizeUser(user) {
 }
 
 /**
- * AuthService Container Blueprint
+ * AuthService
  * Encapsulates identity verification, key derivation, and token issuance.
  * Receives UserRepository and JWT secret via constructor Dependency Injection.
  */

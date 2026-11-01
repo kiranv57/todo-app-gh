@@ -1,7 +1,7 @@
 /**
- * Tier 1: State Storage & Exposure
- * Observable Store Container Blueprint
- * Encapsulates immutable state storage, subscription listeners, and pure dispatch loop.
+ * State storage & exposure
+ * Observable store: encapsulates immutable state storage, subscription
+ * listeners, and a pure dispatch loop.
  */
 (function (root, factory) {
   if (typeof module === 'object' && module.exports) {

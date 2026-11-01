@@ -1,5 +1,5 @@
 # -------------------------------------------------------------
-# Base Image: Frozen OS & Node.js Precursor Floor
+# Base image: minimal OS + Node.js runtime
 # -------------------------------------------------------------
 FROM node:22-alpine AS base
 RUN apk add --no-cache tini
@@ -28,7 +28,7 @@ COPY apps/web ./apps/web
 FROM base AS runner
 WORKDIR /app
 
-# Physical Kernel Security: Create dedicated non-root system user (UID 1001)
+# Create a dedicated non-root system user (UID 1001)
 RUN addgroup -g 1001 -S nodejs && \
     adduser -S apprunner -u 1001 -G nodejs
 
@@ -45,7 +45,7 @@ USER apprunner
 
 EXPOSE 3000
 
-# PID 1 Signal Handling & Zombie Process Reaper
+# Run tini as PID 1 for signal handling and zombie process reaping
 ENTRYPOINT ["/sbin/tini", "--"]
 
 WORKDIR /app/apps/web

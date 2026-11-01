@@ -1,6 +1,6 @@
 /**
- * Tier 2: Business Logic (Pure Reducers)
- * Invariant: Pure synchronous state transformations. No async, no side effects, no fetch.
+ * Business logic: pure reducers
+ * Invariant: pure synchronous state transformations. No async, no side effects, no fetch.
  */
 (function (root, factory) {
   if (typeof module === 'object' && module.exports) {

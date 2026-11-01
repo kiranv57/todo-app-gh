@@ -6,7 +6,7 @@ function generateObjectId() {
 }
 
 /**
- * UserRepository Container Blueprint
+ * UserRepository
  * Encapsulates user collection storage and query constraints.
  * Avoids the module-level singleton trap by accepting a storage instance in its constructor.
  */

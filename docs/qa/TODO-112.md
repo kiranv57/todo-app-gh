@@ -1,4 +1,4 @@
-# QA Evidence Record: [TODO-112] Variable-Driven Design Tokens & 3-Layer Precursor Architecture
+# QA Evidence Record: [TODO-112] Variable-Driven Design Token Architecture
 
 **Ticket:** TODO-112  
 **Title:** Refactor Frontend Styling to 3-Layer Variable-Driven Design Token Architecture  
@@ -8,10 +8,10 @@
 
 ---
 
-## 1. Architectural Scope & Alignment (`/variable-design-tokens`)
+## 1. Architectural Scope & Alignment
 
-1. **Layer 1: Precursor Tokens (`:root` in `apps/web/public/styles.css`)**:
-   - **Spacing Scale**: Defined mathematical precursors `--space-2xs` (2px), `--space-xs` (4px), `--space-sm` (8px), `--space-md` (16px), `--space-lg` (24px), `--space-xl` (32px), `--space-2xl` (48px).
+1. **Layer 1: Base tokens (`:root` in `apps/web/public/styles.css`)**:
+   - **Spacing Scale**: Defined base scale tokens `--space-2xs` (2px), `--space-xs` (4px), `--space-sm` (8px), `--space-md` (16px), `--space-lg` (24px), `--space-xl` (32px), `--space-2xl` (48px).
    - **Fluid Typography Scale**: Replaced static font-sizes with viewport-aware fluid `clamp()` formulas:
      - `--font-xs: clamp(0.7rem, 0.65rem + 0.2vw, 0.75rem)`
      - `--font-base: clamp(0.9375rem, 0.9rem + 0.2vw, 1rem)`
@@ -45,21 +45,21 @@
 
 ### Observed Output
 ```
-▶ TODO-111: Tier 1 Observable Store & Tier 2 Pure Reducers
+▶ TODO-111: observable store & pure reducers
   ✔ Store adheres to observable subscription contract and initial state (1.282878ms)
   ✔ Reducers execute pure deterministic mutations without mutating previous state (0.764482ms)
-✔ TODO-111: Tier 1 Observable Store & Tier 2 Pure Reducers (4.087958ms)
-▶ TODO-111: Tier 3 & 4 Async Boundary, AbortController Shielding & Optimistic Rollbacks
+✔ TODO-111: observable store & pure reducers (4.087958ms)
+▶ TODO-111: async boundary, AbortController cancellation & optimistic rollbacks
   ✔ Optimistic Todo Toggle rolls back cleanly on server error (1.950352ms)
   ✔ AbortController cancels in-flight query when filter switches rapidly (10.651411ms)
-✔ TODO-111: Tier 3 & 4 Async Boundary, AbortController Shielding & Optimistic Rollbacks (13.726497ms)
+✔ TODO-111: async boundary, AbortController cancellation & optimistic rollbacks (13.726497ms)
 ▶ TODO-106, 107: Web Frontend Server & SPA Delivery
   ✔ GET /health returns ok (33.486192ms)
   ✔ GET / serves HTML index markup with TaskSphere branding (10.984992ms)
   ✔ GET /dashboard fallback serves SPA index.html (5.599106ms)
-  ✔ GET /styles.css serves 3-layer precursor tokens, clamp() typography and responsive cascade (5.446684ms)
+  ✔ GET /styles.css serves design tokens, clamp() typography and responsive cascade (5.446684ms)
   ✔ GET /app.js serves client side SPA script (6.835667ms)
-  ✔ GET /store.js, /reducer.js, /api.js, /actions.js deliver tier architecture modules (17.209644ms)
+  ✔ GET /store.js, /reducer.js, /api.js, /actions.js serve state architecture modules (17.209644ms)
 ✔ TODO-106, 107: Web Frontend Server & SPA Delivery (82.070444ms)
 ℹ tests 13
 ℹ suites 0

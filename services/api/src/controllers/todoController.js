@@ -13,9 +13,9 @@ function formatZodIssues(error) {
 }
 
 /**
- * TodoController Container Blueprint
+ * TodoController
  * Orchestrates HTTP input parsing, validation, and response formatting.
- * Thin tier delegating all domain logic and throwing errors to centralized middleware.
+ * Thin layer delegating all domain logic and throwing errors to centralized middleware.
  */
 class TodoController {
   #todoService;

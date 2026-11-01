@@ -1,21 +1,20 @@
 /**
  * ============================================================================
  * Enterprise TaskSphere Design System
- * Architecture: Variable-Driven Design Tokens & 3-Layer Precursor Architecture
- * Skill: /variable-design-tokens
+ * Architecture: variable-driven design tokens in three layers
  *
- * Layer 1: Precursor Tokens (:root) - Raw scales for spacing, fluid typography,
+ * Layer 1: Base tokens (:root) - raw scales for spacing, fluid typography,
  *          semantic colors, elevation shadows, radius, and dynamic layout anchors.
- * Layer 2: Mobile-First Responsive Variable Cascade - Breakpoint-driven overrides.
- * Layer 3: Semantic Consumers - Clean classes consuming dynamic precursor tokens.
+ * Layer 2: Mobile-first responsive variable cascade - breakpoint-driven overrides.
+ * Layer 3: Semantic consumers - component classes consuming the tokens.
  * ============================================================================
  */
 
 /* ============================================================================
-   LAYER 1: PRECURSOR TOKENS (:root)
+   LAYER 1: BASE TOKENS (:root)
    ============================================================================ */
 :root {
-  /* ===== SPACING SCALE (Precursors) ===== */
+  /* ===== SPACING SCALE ===== */
   --space-2xs: 0.125rem; /* 2px */
   --space-xs:  0.25rem;  /* 4px */
   --space-sm:  0.5rem;   /* 8px */
@@ -74,7 +73,7 @@
   --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.25), 0 2px 4px -2px rgb(0 0 0 / 0.25);
   --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.35), 0 4px 6px -4px rgb(0 0 0 / 0.35);
 
-  /* ===== DYNAMIC LAYOUT PRECURSORS (Mobile Base) ===== */
+  /* ===== DYNAMIC LAYOUT TOKENS (Mobile Base) ===== */
   --layout-max-width:    1100px;
   --layout-padding:      var(--space-md);
   --header-padding-b:    var(--space-lg);
@@ -87,7 +86,7 @@
 
 /* ============================================================================
    LAYER 2: MOBILE-FIRST RESPONSIVE VARIABLE CASCADE
-   Overrides precursor tokens at physical breakpoints
+   Overrides base tokens at physical breakpoints
    ============================================================================ */
 
 /* Small Tablets & Large Phones (>= 640px) */

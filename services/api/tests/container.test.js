@@ -1,6 +1,9 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const request = require('supertest');
+
+process.env.JWT_SECRET = process.env.JWT_SECRET || 'test-secret-key-32-bytes-long-super-secure';
+
 const { createContainer } = require('../src/container');
 const { createApp } = require('../src/app');
 const {
@@ -12,7 +15,7 @@ const {
   ConflictError
 } = require('../src/errors');
 
-test('TODO-110: Container Blueprints, Dependency Injection & Composition Root Isolation', async (t) => {
+test('TODO-110: dependency injection & composition root isolation', async (t) => {
   const secretA = 'container-secret-alpha-32-chars-long';
   const secretB = 'container-secret-beta-32-chars-long';
 
@@ -58,7 +61,7 @@ test('TODO-110: Container Blueprints, Dependency Injection & Composition Root Is
 
   await t.test('createApp accepts custom container for clean isolated HTTP testing', async () => {
     const customContainer = createContainer({
-      jwtSecret: 'custom-isolated-key-32-chars-min',
+      jwtSecret: 'test-isolated-key-32-chars-min',
       isolated: true
     });
     const customApp = createApp(customContainer);
@@ -82,7 +85,7 @@ test('TODO-110: Container Blueprints, Dependency Injection & Composition Root Is
 
 test('TODO-110: Centralized Error Middleware & AppError Taxonomy', async (t) => {
   const customContainer = createContainer({
-    jwtSecret: 'err-test-secret-32-characters-min',
+    jwtSecret: 'test-err-secret-32-characters-min',
     isolated: true
   });
   const app = createApp(customContainer);

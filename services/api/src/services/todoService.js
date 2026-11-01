@@ -1,7 +1,7 @@
 const { NotFoundError, ForbiddenError } = require('../errors');
 
 /**
- * TodoService Container Blueprint
+ * TodoService
  * Encapsulates domain logic for todos, pagination policies, and dashboard metrics.
  * Receives TodoRepository via constructor Dependency Injection.
  */

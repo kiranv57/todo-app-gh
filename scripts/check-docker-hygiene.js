@@ -23,7 +23,7 @@ const isStrict = process.argv.includes('--strict') || process.env.CI === 'true';
 const rootDir = process.cwd();
 
 console.log('\n========================================================================================');
-console.log('            Docker Hygiene & Layer Physics Gatekeeper (Enterprise Standard)              ');
+console.log('            Docker Hygiene & Security Audit                                       ');
 console.log('========================================================================================\n');
 
 let violations = 0;
@@ -148,7 +148,7 @@ for (const df of dockerfiles) {
       console.warn(`   ⚠️  SIGNAL INIT: Final stage "${finalStage.name}" should configure tini/dumb-init as ENTRYPOINT.`);
       warnings++;
     } else {
-      console.log(`   ✅ Signal Physics: tini PID 1 reaper configured.`);
+      console.log(`   ✅ Signal handling: tini configured as PID 1.`);
     }
   }
 }

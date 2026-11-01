@@ -9,7 +9,7 @@ function formatZodIssues(error) {
 }
 
 /**
- * AuthController Container Blueprint
+ * AuthController
  * Orchestrates HTTP parsing, schema validation, and delegates to AuthService.
  * Receives AuthService via constructor Dependency Injection.
  */

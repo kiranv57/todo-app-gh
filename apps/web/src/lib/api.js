@@ -1,6 +1,6 @@
 /**
- * Tier 3: Async Boundary (Side Effects & API Client)
- * Invariant: Raw HTTP requests with AbortController signal support for network race-condition prevention.
+ * Async boundary: side effects & API client
+ * Invariant: raw HTTP requests with AbortController signal support to prevent network race conditions.
  * No direct store mutation; returns raw responses or throws structured errors.
  */
 (function (root, factory) {

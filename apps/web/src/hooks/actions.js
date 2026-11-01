@@ -1,7 +1,8 @@
 /**
- * Tier 4: Custom Actions / Stateful Wrappers
- * Invariant: Wraps Store (Tier 1), Reducers (Tier 2), and Async Boundary (Tier 3).
- * Shields against network race conditions via AbortController, manages optimistic rollbacks, and handles session persistence.
+ * Stateful action orchestrators
+ * Composes the store, pure reducers, and the async boundary into one facade.
+ * Guards against network race conditions via AbortController, manages optimistic
+ * rollbacks, and handles session persistence.
  */
 (function (root, factory) {
   if (typeof module === 'object' && module.exports) {

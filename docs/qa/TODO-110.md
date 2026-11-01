@@ -1,7 +1,7 @@
 # QA Evidence Record: [TODO-110] Backend Containerised Architecture, DI & Centralized Error Handling
 
 **Ticket:** TODO-110  
-**Title:** Refactor Backend to Container Blueprints, Composition Root DI, and Centralized Error Handling  
+**Title:** Refactor Backend to Dependency-Injected Classes, a Composition Root, and Centralized Error Handling  
 **Date:** 2026-10-31  
 **Target Environment:** Node.js v24.21.0 / Express 5.x / Linux  
 **Status:** PASS  
@@ -9,10 +9,10 @@
 ---
 
 ## 1. Scope of Implementation
-1. **Container Blueprints (`UserRepository`, `TodoRepository`, `AuthService`, `TodoService`, `AuthController`, `TodoController`)**:
+1. **Dependency-injected classes (`UserRepository`, `TodoRepository`, `AuthService`, `TodoService`, `AuthController`, `TodoController`)**:
    - Eliminated module-level mutable singleton storage traps.
    - Enforced constructor Dependency Injection (`#store`, `#userRepo`, `#todoRepo`, `#jwtSecret`).
-   - Clean class blueprints instantiated at the Composition Root.
+   - Classes instantiated at the composition root.
 2. **Composition Root (`services/api/src/container.js`)**:
    - `createContainer(options)` assembles the dependency graph bottom-up.
    - Strict Zero-Fallback Secret Discipline (`getEnv().JWT_SECRET`).
@@ -48,11 +48,11 @@ JWT_SECRET="test-secret-key-32-bytes-long-super-secure" node --test 'tests/**/*.
   ✔ GET /api/auth/me - with valid token returns current user (11.472764ms)
   ✔ Zero-Fallback Secret Invariant - throws on unset JWT_SECRET (1.522064ms)
 ✔ TODO-102: Authentication & Identity Flow (312.597575ms)
-▶ TODO-110: Container Blueprints, Dependency Injection & Composition Root Isolation
+▶ TODO-110: dependency injection & composition root isolation
   ✔ Containers possess strictly isolated storage instances (1.648065ms)
   ✔ Domain Services and Controllers correctly receive injected dependencies (46.047315ms)
   ✔ createApp accepts custom container for clean isolated HTTP testing (101.237023ms)
-✔ TODO-110: Container Blueprints, Dependency Injection & Composition Root Isolation (150.853314ms)
+✔ TODO-110: dependency injection & composition root isolation (150.853314ms)
 ▶ TODO-110: Centralized Error Middleware & AppError Taxonomy
   ✔ ValidationError serializes structured issues array (8.203244ms)
   ✔ ConflictError returns HTTP 409 CONFLICT (106.772448ms)

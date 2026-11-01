@@ -1,5 +1,12 @@
 # Sprint 1 Backlog
 
+> **MIGRATED (2026-11-01):** This backlog now lives in ItsaPlan ("TODOAPP" project), Sprint 1 cycle.
+> Mapping: original ticket TODO-100–TODO-114 → platform issues TODO-1–TODO-15.
+> Ticket types (Story / Chore / Refactor / Spike), blast-radius labels (`backend`, `frontend`, `shared`, `devops`, `docs`),
+> acceptance criteria (issue checklists), and QA/architecture records (project Documents, linked to their issues)
+> were all migrated. Going forward, tickets are minted in ItsaPlan and referenced here only by their `TODO-###` key.
+> This file is retained as the historical source of record.
+
 Two-week sprint. One developer plus agent execution. Committed work is 70% of capacity; 30% reserved for review, QA, and hotfixes.
 
 Conventions: keys are stable, never renumbered. Points are Fibonacci; 8 means split. Every ticket lists its blast radius so parallel branches cannot collide.
@@ -173,10 +180,10 @@ Conventions: keys are stable, never renumbered. Points are Fibonacci; 8 means sp
 
 ---
 
-## TODO-110 — Backend Architecture: Container Blueprints, Composition Root DI, and Centralized Error Handling
+## TODO-110 — Backend Architecture: Dependency-Injected Classes, Composition Root, and Centralized Error Handling
 
 - Type: refactor, 5 points
-- Story: As a platform architect, I want backend services and repositories encapsulated in Container Blueprints with Dependency Injection at a Composition Root, backed by a Centralized Error Handling middleware, eliminating module-level singleton traps and per-controller try/catches.
+- Story: As a platform architect, I want backend services and repositories encapsulated in dependency-injected classes composed at the composition root, backed by a centralized error-handling middleware, eliminating module-level singleton traps and per-controller try/catches.
 - Blast radius: `services/api/src/errors/`, `services/api/src/middleware/errorHandler.js`, `services/api/src/models/`, `services/api/src/services/`, `services/api/src/controllers/`, `services/api/src/container.js`, `services/api/src/app.js`
 - Out of scope: shared contracts, web frontend, Docker configuration
 - Depends on: TODO-102, TODO-103, TODO-104, TODO-105
@@ -184,56 +191,71 @@ Conventions: keys are stable, never renumbered. Points are Fibonacci; 8 means sp
   - [x] Typed Domain Errors (`AppError`, `ValidationError` 400, `UnauthorizedError` 401, `ForbiddenError` 403, `NotFoundError` 404, `ConflictError` 409).
   - [x] Centralized Error Middleware registered as the final Express layer; formats errors consistently into `{ success: false, error, code, issues? }`.
   - [x] Controllers are thin orchestrators: remove per-route try/catches; use an `asyncHandler` wrapper forwarding thrown errors to `next()`.
-  - [x] Container Blueprints: `UserRepository`, `TodoRepository`, `AuthService`, and `TodoService` are Classes/Factories taking dependencies via constructors/closures.
+  - [x] Repository & service classes: `UserRepository`, `TodoRepository`, `AuthService`, and `TodoService` take dependencies via constructor/closure parameters.
   - [x] Module-level singleton state in models eliminated: repositories take an explicit Storage adapter (`new Map()` or DB client).
   - [x] Composition Root in `services/api/src/container.js` instantiates the entire dependency graph bottom-up and exposes ready-to-mount routes.
   - [x] All 28 existing backend integration tests continue to pass with zero regressions.
 
 ---
 
-## TODO-111 — Frontend Architecture: 6-Tier Reactive Store, Custom Hooks, AbortController, and Declarative Components
+## TODO-111 — Frontend Architecture: Reactive Store, Action Orchestrators, AbortController, and Declarative Components
 
 - Type: refactor, 5 points
-- Story: As a frontend engineer, I want the web application structured following the 6-Tier Reactive Store Architecture, with explicit state mutations, AbortController cancellation against network race conditions, and declarative component rendering.
+- Story: As a frontend engineer, I want the web application structured around an observable store with explicit state mutations, AbortController cancellation against network race conditions, and declarative component rendering.
 - Blast radius: `apps/web/public/`, `apps/web/src/`, `apps/web/tests/`
 - Out of scope: backend services, shared contracts
 - Depends on: TODO-106, TODO-107, TODO-110
 - AC:
-  - [x] Tier 1: Dedicated State Store managing `{ auth, todos, stats, filter, pagination }`.
-  - [x] Tier 2: Pure State Mutations / Reducers (`SET_AUTH`, `SET_TODOS`, `OPTIMISTIC_TOGGLE`, `ROLLBACK_TOGGLE`).
-  - [x] Tier 3: Async Boundary with `AbortController` cancellation signal to prevent out-of-order responses on rapid filter tab clicks.
-  - [x] Tier 4: Custom Hooks / Stateful Wrappers (`useAuth`, `useTodos`, `useDashboardStats`) returning `{ state, actions }`.
-  - [x] Tier 5: Thin Event Handlers on components delegating directly to Tier 4 actions.
-  - [x] Tier 6: Declarative UI rendering where view updates strictly derive from state transitions.
+  - [x] State store managing `{ auth, todos, stats, filter, pagination }`.
+  - [x] Pure state mutations / reducers (`SET_AUTH`, `SET_TODOS`, `OPTIMISTIC_TOGGLE`, `ROLLBACK_TOGGLE`).
+  - [x] Async boundary with `AbortController` cancellation signal to prevent out-of-order responses on rapid filter tab clicks.
+  - [x] Stateful action orchestrators (`useAuth`, `useTodos`, `useDashboardStats`) returning `{ state, actions }`.
+  - [x] Thin event handlers on components delegating directly to the action orchestrators.
+  - [x] Declarative UI rendering where view updates strictly derive from state transitions.
   - [x] All web delivery tests continue to pass.
 
 ---
 
-## TODO-112 — Variable-Driven Design Tokens & 3-Layer Precursor Architecture
+## TODO-112 — Variable-Driven Design Tokens & 3-Layer Token Architecture
 
 - Type: refactor, 3 points
-- Story: As a frontend engineer, I want the web interface styled using the 3-Layer Precursor Token Architecture, with fluid clamp() typography and a mobile-first responsive variable cascade, eliminating class spread and breakpoint drift.
+- Story: As a frontend engineer, I want the web interface styled using a 3-layer design token architecture, with fluid clamp() typography and a mobile-first responsive variable cascade, eliminating class spread and breakpoint drift.
 - Blast radius: `apps/web/public/styles.css`, `apps/web/tests/web.test.js`
 - Out of scope: backend logic, Dockerfiles
 - AC:
-  - [x] Layer 1 Precursor Tokens in `:root`: spacing scale (`--space-2xs` to `--space-2xl`), fluid typography using `clamp()` (`--font-xs` to `--font-hero`), semantic colors, radius scale, and elevation shadows.
-  - [x] Layer 2 Mobile-First Responsive Cascade: media query blocks (`@media (min-width: 640px)`, `768px`, `1024px`) dynamically overriding precursor layout tokens.
-  - [x] Layer 3 Semantic Consumers: classes `.app-layout`, `.surface-card`, `.metrics-grid`, `.btn-primary`, `.form-group` consuming precursor variables.
+  - [x] Layer 1 base tokens in `:root`: spacing scale (`--space-2xs` to `--space-2xl`), fluid typography using `clamp()` (`--font-xs` to `--font-hero`), semantic colors, radius scale, and elevation shadows.
+  - [x] Layer 2 mobile-first responsive cascade: media query blocks (`@media (min-width: 640px)`, `768px`, `1024px`) dynamically overriding layout tokens.
+  - [x] Layer 3 semantic consumers: classes `.app-layout`, `.surface-card`, `.metrics-grid`, `.btn-primary`, `.form-group` consuming the token variables.
   - [x] Automated tests verify style delivery and design token existence.
 
 ---
 
-## TODO-113 — 3-Trigger CI/CD Pipeline, DevOps File Authoring & Frozen Inode Architecture
+## TODO-113 — CI/CD Pipeline, Compose Profiles & Architectural Records
 
 - Type: chore, 5 points
-- Story: As an SRE, I want the full 3-Trigger Sequential CI/CD relay implemented, the Indie Local Dev Docker Compose archetype authored, and the Frozen Inode architectural lens formally documented.
-- Blast radius: `scripts/pre-commit-gate.js`, `.github/workflows/ci.yml`, `docker-compose.yml`, `docs/architecture/0002-frozen-inode-and-pipeline-physics.md`
+- Story: As an SRE, I want the full staged CI/CD pipeline implemented (pre-commit checks, pull-request gates, release gate), development and production Docker Compose profiles, and the platform's immutable-artifact architecture documented.
+- Blast radius: `scripts/pre-commit-gate.js`, `.github/workflows/ci.yml`, `docker-compose.yml`, `docs/architecture/0002-immutable-artifacts-and-ci-cd-pipeline.md`
 - Out of scope: application business logic
 - AC:
-  - [x] Trigger 1 (Local Laptop Guard): `scripts/pre-commit-gate.js` scans staged files for leaked secrets, ensures required envs are documented, and runs Docker hygiene checks before commit inodes can be created.
-  - [x] Trigger 2 (PR Cloud Gate): `.github/workflows/ci.yml` validates code delta, executes tests, and enforces container certification (<150MB image size budget & detached boot smoke test).
-  - [x] Trigger 3 (Release Gate on `main` merge): `.github/workflows/ci.yml` runs heavy release verification and executes canary build pinned strictly to `${{ github.sha }}`, explicitly rejecting `:latest`.
-  - [x] DevOps File Authoring: `docker-compose.yml` provides both the Indie Local Dev archetype (live bind-mounts for instant hot-reload) and Corporate Production archetype.
-  - [x] Frozen Inode Architecture: `docs/architecture/0002-frozen-inode-and-pipeline-physics.md` details how Git tracking, Turborepo delta compilation, OverlayFS container layers, and ephemeral runners operate as frozen inodes and mutable pointer dictionaries.
+  - [x] Pre-commit gate: `scripts/pre-commit-gate.js` scans staged files for leaked secrets, ensures required envs are documented, and runs Docker hygiene checks before any commit is created.
+  - [x] Pull-request gate: `.github/workflows/ci.yml` validates the code change, executes tests, and enforces container certification (<150MB image size budget & detached boot smoke test).
+  - [x] Release gate (push to `main`): `.github/workflows/ci.yml` runs full release verification and builds images pinned strictly to `${{ github.sha }}`, explicitly rejecting `:latest`.
+  - [x] Compose profiles: `docker-compose.yml` provides both a development profile (live bind-mounts for instant hot-reload) and a production profile (pre-built images).
+  - [x] Architecture record: `docs/architecture/0002-immutable-artifacts-and-ci-cd-pipeline.md` details how Git object storage, Turborepo delta compilation, OverlayFS container layers, and ephemeral runners treat artifacts as immutable, content-addressed objects referenced by mutable pointers.
+
+---
+
+## TODO-114 — Standardize Pipeline & Architecture Naming Across Docs, CI, and Scripts
+
+- Type: chore, 2 points
+- Story: As a reviewer, I want one consistent vocabulary across the architecture records, CI job names, script banners, QA records, changelog, and backlog entries, so that the pre-commit, pull-request, and release phases of the pipeline read uniformly anywhere in the repository.
+- Blast radius: `.github/workflows/ci.yml`, `scripts/*.js`, `scripts/*.sh`, `services/api/Dockerfile`, `apps/web/Dockerfile`, `docker-compose.yml`, `apps/web/**` (comments/tests only), `services/api/**` (comments/tests only), `docs/**`, `CHANGELOG.md`
+- Out of scope: application behavior, endpoint contracts
+- AC:
+  - [ ] Committed files use consistent wording for pipeline phases (pre-commit, pull-request, release) and design token layers.
+  - [ ] Console banners in `scripts/pre-commit-gate.js`, `scripts/check-docker-hygiene.js`, and `scripts/docker-smoke.sh` match the wording quoted in `docs/qa/` evidence records.
+  - [ ] `docs/architecture/0002-immutable-artifacts-and-ci-cd-pipeline.md` is the single pipeline architecture record; no duplicate or superseded records remain.
+  - [ ] Production Compose profile requires `JWT_SECRET` via environment (no fallback default).
+  - [ ] All 75 tests still pass after the renames (re-run all suites).
 
 

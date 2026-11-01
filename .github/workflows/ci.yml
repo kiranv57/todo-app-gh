@@ -1,12 +1,17 @@
-name: Continuous Integration & Deployment Relay
+name: Continuous Integration & Release Pipeline
 
 # ==============================================================================
-# The 3-Trigger Sequential CI/CD Pipeline Architecture
-# Skill: /three-trigger-cicd-pipeline & /frozen-inode-mental-model
+# Pipeline architecture (see docs/architecture/0002-immutable-artifacts-and-ci-cd-pipeline.md)
 #
-# Trigger 1: Local Laptop Guard (git commit via scripts/pre-commit-gate.js)
-# Trigger 2: Fast PR Cloud Verification (git push / pull_request - Stages 3, 4, 5)
-# Trigger 3: Heavy Integration & Immutable Canary Release (merge to main - Stages 6, 7)
+# Commit time (local):        scripts/pre-commit-gate.js — Stages 1 & 2
+# Pull-request / push gates:  Stages 3, 4, 5 below
+# Release gate (push to main) Stages 6 & 7 below
+#
+# Stage 3: Package test suites
+# Stage 4: Dockerfile hygiene & security audit
+# Stage 5: Container build & smoke certification (<150MB budget, /health probe)
+# Stage 6: Full monorepo integration matrix
+# Stage 7: Release images built and pinned to the exact Git commit SHA
 # ==============================================================================
 
 on:
@@ -15,22 +20,22 @@ on:
   pull_request:
     branches: [main, dev]
 
-# CI FinOps & Runner Concurrency Throttling (Cancel obsolete runs on new push)
+# Concurrency throttling: cancel superseded runs when a new push lands
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   # ============================================================================
-  # TRIGGER 2: FAST PR CLOUD VERIFICATION (Stages 3, 4, 5)
+  # PULL-REQUEST / PUSH VALIDATION (Stages 3, 4, 5)
   # ============================================================================
 
-  # Stage 4: Docker Precursor Gates (Linting & Non-Root USER verification)
-  docker-precursor-gate:
-    name: "Trigger 2: [Stage 4] Docker Precursor & Layer Hygiene Gate"
+  # Stage 4: Dockerfile hygiene gates (linting & non-root USER verification)
+  docker-hygiene-gate:
+    name: "[Stage 4] Dockerfile Hygiene & Security Audit"
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Code
+      - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Setup Node.js
@@ -38,15 +43,15 @@ jobs:
         with:
           node-version: 22
 
-      - name: Audit Dockerfiles for Non-Root USER & Layer Cache Invariant
+      - name: Audit Dockerfiles for non-root USER & layer caching invariants
         run: node scripts/check-docker-hygiene.js --strict
 
-  # Stage 3: VM Delta Inode Compile & Multi-Package Verification
+  # Stage 3: Package test suites
   test-shared-contracts:
-    name: "Trigger 2: [Stage 3] Shared Contracts (@repo/shared)"
+    name: "[Stage 3] Shared Contracts (@repo/shared)"
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Code
+      - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Setup Node.js
@@ -54,15 +59,15 @@ jobs:
         with:
           node-version: 22
 
-      - name: Execute Contracts Test Suite
+      - name: Run shared contracts test suite
         working-directory: packages/shared
         run: node --test 'tests/**/*.test.js'
 
   test-backend-api:
-    name: "Trigger 2: [Stage 3] Backend API Suite (@repo/api)"
+    name: "[Stage 3] Backend API Suite (@repo/api)"
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Code
+      - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Setup Node.js
@@ -70,17 +75,17 @@ jobs:
         with:
           node-version: 22
 
-      - name: Execute API Integration Suite
+      - name: Run backend API test suite
         working-directory: services/api
         env:
           JWT_SECRET: ci-test-runner-cryptographic-signing-key-32-chars
         run: node --test 'tests/**/*.test.js'
 
   test-frontend-web:
-    name: "Trigger 2: [Stage 3] Web Frontend Delivery (@repo/web)"
+    name: "[Stage 3] Web Frontend Suite (@repo/web)"
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Code
+      - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Setup Node.js
@@ -88,37 +93,37 @@ jobs:
         with:
           node-version: 22
 
-      - name: Execute Web SPA Suite
+      - name: Run web frontend test suite
         working-directory: apps/web
         run: node --test 'tests/**/*.test.js'
 
-  # Stage 5: Container Certification (<150MB byte budget & /health smoke test)
+  # Stage 5: Container build & smoke certification (<150MB size budget & /health probe)
   container-certification:
-    name: "Trigger 2: [Stage 5] Container Certification & Smoke Gate"
-    needs: [docker-precursor-gate, test-shared-contracts, test-backend-api, test-frontend-web]
+    name: "[Stage 5] Container Build & Smoke Certification"
+    needs: [docker-hygiene-gate, test-shared-contracts, test-backend-api, test-frontend-web]
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Code (Clean-Room Pull)
+      - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Execute Docker Container Smoke Test & Size Gate
+      - name: Run container smoke test & size budget gate
         run: bash scripts/docker-smoke.sh
 
   # ============================================================================
-  # TRIGGER 3: INTEGRATION & RELEASE GATE (git merge into main)
-  # Stages 6 & 7 execute strictly on push to main (after PR approval & merge)
+  # RELEASE GATE (push to main only, after PR approval & merge)
+  # Stages 6 & 7 execute strictly on push to main
   # ============================================================================
 
   heavy-integration-matrix:
-    name: "Trigger 3: [Stage 6] Heavy Integration Matrix (Multi-Tenant & Security Attack)"
+    name: "[Stage 6] Full Monorepo Integration Matrix"
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     needs: [container-certification]
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Code
+      - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Setup Node.js
@@ -126,7 +131,7 @@ jobs:
         with:
           node-version: 22
 
-      - name: Execute End-to-End Monorepo Test Matrix
+      - name: Run full monorepo test matrix
         env:
           JWT_SECRET: ci-test-runner-cryptographic-signing-key-32-chars
         run: |
@@ -134,31 +139,31 @@ jobs:
           (cd services/api && node --test 'tests/**/*.test.js')
           (cd apps/web && node --test 'tests/**/*.test.js')
 
-  immutable-canary-deployment:
-    name: "Trigger 3: [Stage 7] Immutable Canary Deployment (Commit SHA Pinned)"
+  release-artifact-build:
+    name: "[Stage 7] Build SHA-Pinned Release Images"
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     needs: [heavy-integration-matrix]
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Code
+      - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build Immutable Container Tagged by Git Commit SHA
+      - name: Build release images pinned to the Git commit SHA
         env:
           COMMIT_SHA: ${{ github.sha }}
         run: |
-          echo "Building immutable release images pinned to commit SHA: ${COMMIT_SHA}"
+          echo "Building release images pinned to commit SHA: ${COMMIT_SHA}"
           docker build -t "task-sphere-api:${COMMIT_SHA}" -f services/api/Dockerfile .
           docker build -t "task-sphere-web:${COMMIT_SHA}" -f apps/web/Dockerfile .
 
-      - name: Anti-Pattern Defense (Strictly Ban :latest Tag)
+      - name: Enforce pinned image tags (reject :latest)
         run: |
-          echo "Verifying deployment tags strictly exclude unpinned ':latest'..."
+          echo "Verifying that built images strictly exclude unpinned ':latest' tags..."
           if docker images | grep -q "task-sphere-api:latest"; then
-            echo "FATAL: Deployment of unpinned ':latest' is strictly prohibited."
+            echo "FATAL: unpinned ':latest' image tags are prohibited."
             exit 1
           fi
-          echo "PASS: Production artifacts pinned to immutable commit SHA ${{ github.sha }}."
+          echo "PASS: Release artifacts pinned to immutable commit SHA ${{ github.sha }}."

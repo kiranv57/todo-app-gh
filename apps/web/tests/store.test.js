@@ -5,7 +5,7 @@ const { rootReducer, ActionTypes, initialState } = require('../src/store/reducer
 const { createApiClient } = require('../src/lib/api');
 const { createActions } = require('../src/hooks/actions');
 
-test('TODO-111: Tier 1 Observable Store & Tier 2 Pure Reducers', async (t) => {
+test('TODO-111: observable store & pure reducers', async (t) => {
   await t.test('Store adheres to observable subscription contract and initial state', () => {
     const store = createStore(rootReducer);
     const state = store.getState();
@@ -75,7 +75,7 @@ test('TODO-111: Tier 1 Observable Store & Tier 2 Pure Reducers', async (t) => {
   });
 });
 
-test('TODO-111: Tier 3 & 4 Async Boundary, AbortController Shielding & Optimistic Rollbacks', async (t) => {
+test('TODO-111: async boundary, AbortController cancellation & optimistic rollbacks', async (t) => {
   function createMockStorage() {
     const map = new Map();
     return {
@@ -125,7 +125,7 @@ test('TODO-111: Tier 3 & 4 Async Boundary, AbortController Shielding & Optimisti
     // Initial state: incomplete
     assert.equal(store.getState().todos.items[0].completed, false);
 
-    // Trigger toggle - should attempt update and then rollback due to error
+    // Toggle a todo: update is attempted, then rolled back after the server error
     await actions.toggleTodo('todo-99', false);
 
     // Final state must be rolled back to false

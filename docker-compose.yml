@@ -1,23 +1,25 @@
 # ==============================================================================
-# Enterprise TaskSphere Docker Compose Architecture
-# Skills: /devops-file-authoring & /six-step-checklist-precursor
+# TaskSphere Docker Compose
 #
-# Implements the Two Core Architectural Archetypes:
-#   1. INDIE / LOCAL DEV (Profile: dev)
-#      - Live host bind-mounts for instant hot-reload iteration (0ms rebuilds).
-#      - Anonymous node_modules volumes preventing host directory pollution.
-#   2. CORPORATE PRODUCTION (Profile: prod)
-#      - Pre-baked immutable multi-stage images.
+# Runs the app in one of two profiles:
+#   1. DEVELOPMENT (profile: dev)
+#      - Live bind-mounts of source for instant hot-reload iteration.
+#      - Anonymous node_modules volumes prevent host directory pollution.
+#   2. PRODUCTION (profile: prod)
+#      - Pre-built immutable multi-stage images.
 #      - Dedicated non-root user (UID 1001).
-#      - tini PID 1 supervisor signal handling.
+#      - tini PID 1 supervisor for signal handling.
 #      - Automated container healthchecks.
+#
+# Secrets policy: never rely on fallback values — JWT_SECRET must be injected
+# through the environment wherever production services run.
 # ==============================================================================
 
 version: '3.8'
 
 services:
   # ============================================================================
-  # ARCHETYPE 1: INDIE / LOCAL DEV (Live Bind-Mounts & 0ms Hot-Reload)
+  # DEVELOPMENT PROFILE (bind-mounted source, hot reload)
   # Run: docker compose --profile dev up
   # ============================================================================
 
@@ -35,7 +37,7 @@ services:
       - JWT_SECRET=local-development-cryptographic-signing-secret-32-chars
       - MONGODB_URI=mongodb://mongo:27017/todo-dev
     volumes:
-      # Step 4 Invariant: Live Bind-Mount from developer laptop to container
+      # Live bind-mount of the source tree for editor-driven reload
       - .:/app
       # Prevent container node_modules from polluting or conflicting with host
       - /app/node_modules
@@ -64,7 +66,7 @@ services:
       - api-dev
 
   # ============================================================================
-  # ARCHETYPE 2: CORPORATE PRODUCTION (Immutable Multi-Stage, Non-Root UID 1001)
+  # PRODUCTION PROFILE (pre-built images, non-root UID 1001)
   # Run: docker compose --profile prod up
   # ============================================================================
 
@@ -80,7 +82,7 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=5000
-      - JWT_SECRET=${JWT_SECRET:-production-signing-key-must-be-injected-from-vault}
+      - JWT_SECRET=${JWT_SECRET:?JWT_SECRET must be provided via the environment; no fallback values are permitted}
       - MONGODB_URI=mongodb://mongo:27017/todo-prod
     restart: unless-stopped
     healthcheck:
@@ -115,7 +117,7 @@ services:
     depends_on:
       - api-prod
 
-  # Shared Database Precursor
+  # Shared database
   mongo:
     image: mongo:7-jammy
     container_name: tasksphere-mongo

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # ==============================================================================
-# Docker Container Boot & Smoke Test Gate (LibreChat Enterprise Pattern)
+# Docker Container Boot & Smoke Test Gate
 #
 # Builds the production container, spins it up in isolated detached mode,
 # polls the /health probe endpoint, verifies non-root execution, and cleans up.
@@ -17,13 +17,13 @@ ATTEMPT=1
 SUCCESS=0
 
 echo "========================================================================================"
-echo "          Docker Container Boot & Smoke Gatekeeper (LibreChat Standard)                 "
+echo "          Docker Container Boot & Smoke Test                                       "
 echo "========================================================================================"
 
 # Check if Docker daemon is available
 if ! command -v docker &> /dev/null || ! docker info &> /dev/null; then
   echo "⚠️  [Notice]: Docker daemon is not running or accessible in this environment."
-  echo "    Execution Physics: Container runners require heavy VM runner to build Docker images."
+  echo "    Building and booting containers requires a Docker-enabled runner."
   echo "    Proceeding with static container contract & health handler verification..."
   
   # Validate server health endpoint code exists
@@ -98,7 +98,7 @@ else
   exit 1
 fi
 
-echo "📦 Verifying Stage 5 container size budget (<150MB)..."
+echo "📦 Verifying container image size budget (<150MB)..."
 IMAGE_SIZE_BYTES=$(docker image inspect "$IMAGE_NAME" --format='{{.Size}}' 2>/dev/null || echo 0)
 if [ "$IMAGE_SIZE_BYTES" -gt 0 ]; then
   IMAGE_SIZE_MB=$((IMAGE_SIZE_BYTES / 1024 / 1024))

@@ -6,7 +6,7 @@ function generateObjectId() {
 }
 
 /**
- * TodoRepository Container Blueprint
+ * TodoRepository
  * Encapsulates todo document persistence, sorting, compound query indexes, and tenant IDOR checks.
  * Storage is injected into constructor to eliminate the module-level singleton trap.
  */

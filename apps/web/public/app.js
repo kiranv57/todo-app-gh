@@ -1,12 +1,12 @@
 /**
  * Enterprise TaskSphere Client Application
- * Follows 6-Tier Reactive State Architecture:
- * - Tier 1: State Storage & Exposure (store.js)
- * - Tier 2: Business Logic & Pure Reducer (reducer.js)
- * - Tier 3: Async Boundary & AbortController Signal Shielding (api.js)
- * - Tier 4: Custom Hooks / Stateful Action Orchestrators (actions.js)
- * - Tier 5: Event Handlers (Explicit DOM triggers)
- * - Tier 6: Declarative UI Projection (Subscribing to Store)
+ * Layered reactive state architecture:
+ * - store.js: state storage & exposure
+ * - reducer.js: business logic & pure reducers
+ * - api.js: async boundary with AbortController cancellation
+ * - actions.js: stateful action orchestrators
+ * - app.js: DOM event handlers bound to user-initiated events
+ * - render loop: declarative UI rendering subscribed to the store
  * Session Storage Token Key: tasksphere_jwt
  */
 (function () {
@@ -14,7 +14,7 @@
 
   const { createStore, rootReducer, createApiClient, createActions, ActionTypes } = window.TaskSphere;
 
-  // Tier 1 & Composition Root for Client
+  // Application assembly: build the client dependency graph
   const store = createStore(rootReducer);
   const api = createApiClient();
   const actions = createActions({
@@ -58,7 +58,7 @@
   const metricRate = document.getElementById('metric-rate');
 
   // =========================================================================
-  // Tier 6: Declarative UI Projection (Pure function of State)
+  // Declarative UI rendering (pure function of state)
   // =========================================================================
   function render(state) {
     // 1. Auth Section vs Dashboard Visibility
@@ -139,7 +139,7 @@
       const main = document.createElement('div');
       main.className = 'todo-main';
 
-      // Explicit Trigger: Checkbox Toggle
+      // Checkbox toggle
       const checkbox = document.createElement('input');
       checkbox.type = 'checkbox';
       checkbox.className = 'todo-checkbox';
@@ -169,7 +169,7 @@
       const actionsDiv = document.createElement('div');
       actionsDiv.className = 'todo-actions';
 
-      // Explicit Trigger: Delete Task
+      // Delete task button
       const deleteBtn = document.createElement('button');
       deleteBtn.className = 'btn btn-sm btn-danger';
       deleteBtn.textContent = 'Delete';
@@ -188,14 +188,14 @@
   }
 
   // =========================================================================
-  // Tier 5: Event Handlers (Explicit Triggers grabbing data from DOM events)
+  // DOM event handlers bound to user-initiated events
   // =========================================================================
 
-  // Auth Tab Navigation Triggers
+  // Auth tab navigation
   tabLogin.addEventListener('click', () => actions.setTab('login'));
   tabRegister.addEventListener('click', () => actions.setTab('register'));
 
-  // Login Form Submission Trigger
+  // Login form submission
   formLogin.addEventListener('submit', async (e) => {
     e.preventDefault();
     actions.clearAlert();
@@ -204,7 +204,7 @@
     await actions.login({ email, password });
   });
 
-  // Register Form Submission Trigger
+  // Register form submission
   formRegister.addEventListener('submit', async (e) => {
     e.preventDefault();
     actions.clearAlert();
@@ -214,7 +214,7 @@
     await actions.register({ username, email, password });
   });
 
-  // Create Todo Submission Trigger
+  // Create todo submission
   formCreateTodo.addEventListener('submit', async (e) => {
     e.preventDefault();
     const title = todoTitle.value.trim();
@@ -227,14 +227,14 @@
     todoDesc.value = '';
   });
 
-  // Filter Buttons Trigger
+  // Filter buttons
   filterButtons.forEach((btn) => {
     btn.addEventListener('click', () => {
       actions.setFilter(btn.dataset.filter);
     });
   });
 
-  // Pagination Triggers
+  // Pagination
   btnPrevPage.addEventListener('click', () => {
     const { page } = store.getState().todos;
     if (page > 1) actions.setPage(page - 1);
@@ -245,7 +245,7 @@
     if (page < totalPages) actions.setPage(page + 1);
   });
 
-  // Logout Trigger
+  // Logout
   btnLogout.addEventListener('click', () => {
     actions.logout();
   });

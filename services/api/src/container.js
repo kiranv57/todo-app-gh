@@ -14,18 +14,18 @@ const { getEnv } = require('./config/env');
 function createContainer(options = {}) {
   const jwtSecret = options.jwtSecret || (process.env.JWT_SECRET ? getEnv().JWT_SECRET : undefined);
 
-  // Tier 1: Storage Adapters & Repositories
+  // Storage adapters & repositories
   const userStore = options.userStore || (options.isolated ? new Map() : defaultUserStore);
   const todoStore = options.todoStore || (options.isolated ? new Map() : defaultTodoStore);
 
   const userRepository = new UserRepository(userStore);
   const todoRepository = new TodoRepository(todoStore);
 
-  // Tier 2: Domain Services
+  // Domain services
   const authService = new AuthService(userRepository, jwtSecret);
   const todoService = new TodoService(todoRepository);
 
-  // Tier 3: HTTP Controllers
+  // HTTP controllers
   const authController = new AuthController(authService);
   const todoController = new TodoController(todoService);
 

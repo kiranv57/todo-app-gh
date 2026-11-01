@@ -7,33 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.2.0] - 2026-10-31
 
 ### Added
-- **Design System: Variable-Driven Precursor Tokens (`TODO-112`)**:
-  - Implemented full **3-Layer Precursor Token Architecture** in `apps/web/public/styles.css`.
-  - Layer 1: `:root` mathematical precursor scales for spacing (`--space-2xs` to `--space-2xl`), fluid typography using `clamp()` (`--font-xs` to `--font-hero`), semantic colors, radius scale, and elevation shadows.
-  - Layer 2: Mobile-First Responsive Variable Cascade (`@media (min-width: 640px)`, `768px`, `1024px`) dynamically overriding precursor layout tokens without markup class spread.
+- **Design System: Variable-Driven Design Tokens (`TODO-112`)**:
+  - Implemented a 3-layer design token architecture in `apps/web/public/styles.css`.
+  - Layer 1: `:root` base scales for spacing (`--space-2xs` to `--space-2xl`), fluid typography using `clamp()` (`--font-xs` to `--font-hero`), semantic colors, radius scale, and elevation shadows.
+  - Layer 2: Mobile-first responsive variable cascade (`@media (min-width: 640px)`, `768px`, `1024px`) overriding layout tokens at each breakpoint without markup class spread.
   - Layer 3: Semantic consumer classes (`.app-layout`, `.surface-card`, `.metrics-grid`, `.btn-primary`) consuming CSS variables.
-- **DevOps: 3-Trigger CI/CD Pipeline & Inode Architecture (`TODO-113`)**:
-  - **Trigger 1 (Local Laptop Guard)**: Created `scripts/pre-commit-gate.js` enforcing zero-leak credential checks, `.env.example` validation, and Docker hygiene before commit inodes can be written.
-  - **Trigger 2 (Fast PR Cloud Gate)**: Upgraded `.github/workflows/ci.yml` with Stage 3 delta compile, Stage 4 Docker precursor checks, and Stage 5 container certification (<150MB byte budget & detached boot `/health` smoke test).
-  - **Trigger 3 (Heavy Integration & Release Gate)**: Configured release workflow on merge to `main` with multi-tenant E2E verification and immutable canary deployments pinned strictly to Git commit SHA (`task-sphere-api:${{ github.sha }}`), strictly banning `:latest`.
-  - **DevOps File Authoring**: Authored `docker-compose.yml` demonstrating both the **Indie Local Dev archetype** (live volume bind-mounts, hot-reloading) and **Corporate Production archetype**.
-  - **Architecture Documentation**: Authored `docs/architecture/0002-frozen-inode-and-pipeline-physics.md` explaining the system through the Frozen Inode lens across Git versioning, compiler delta caching, OverlayFS container layers, and ephemeral runner lifecycles.
+- **DevOps: CI/CD Pipeline & Layered Container Architecture (`TODO-113`)**:
+  - **Pre-commit gate**: Created `scripts/pre-commit-gate.js` enforcing zero-leak credential checks, `.env.example` validation, and Docker hygiene before any commit is created.
+  - **Pull-request CI gate**: Upgraded `.github/workflows/ci.yml` with package test suites (Stage 3), Dockerfile audits (Stage 4), and container certification (Stage 5: <150MB image budget & detached boot `/health` smoke test).
+  - **Release gate**: Configured the release workflow on push to `main` with monorepo-wide integration verification and release image builds pinned to the Git commit SHA (`task-sphere-api:${{ github.sha }}`), rejecting floating `:latest` tags.
+  - **Compose profiles**: Authored `docker-compose.yml` with a development profile (live volume bind-mounts, hot-reloading) and a production profile (pre-built images).
+  - **Architecture documentation**: Authored `docs/architecture/0002-immutable-artifacts-and-ci-cd-pipeline.md` explaining Git object storage, dependency delta caching, OverlayFS container layers, and ephemeral runner lifecycles through the lens of immutable, content-addressed artifacts.
 
 ## [1.1.0] - 2026-10-31
 
 ### Added
-- **Backend Architecture & DI Composition Root (`TODO-110`)**:
-  - Container Blueprints (`UserRepository`, `TodoRepository`, `AuthService`, `TodoService`, `AuthController`, `TodoController`) eliminating module-level singleton state.
+- **Backend Architecture & Dependency Injection (`TODO-110`)**:
+  - Classes (`UserRepository`, `TodoRepository`, `AuthService`, `TodoService`, `AuthController`, `TodoController`) eliminating module-level singleton state.
   - Composition Root (`createContainer`) assembling the dependency graph bottom-up with configurable storage instances for hermetic, state-leak-free test isolation.
   - Centralized Error Handling architecture (`services/api/src/errors/`, `services/api/src/middleware/errorHandler.js`) with typed `AppError` taxonomy (`ValidationError`, `UnauthorizedError`, `ForbiddenError`, `NotFoundError`, `ConflictError`).
   - Elimination of fragmented route-level `try/catch` boilerplate via `asyncHandler`.
-- **Frontend 6-Tier Reactive Architecture (`TODO-111`)**:
-  - **Tier 1 (Store)**: Observable Store blueprint (`createStore`) with immutable snapshot reading and subscription listeners.
-  - **Tier 2 (Reducers)**: Pure, synchronous state transformation reducers (`auth`, `todos`, `dashboard`, `ui`) with no-backend side-effect isolation.
-  - **Tier 3 (Async Boundary)**: API client (`createApiClient`) with explicit `AbortController` cancellation signal integration on all endpoints.
-  - **Tier 4 (Actions & Hooks)**: Stateful action orchestrators (`createActions`) with in-flight `AbortController` request cancellation preventing out-of-order race conditions on rapid filter switching and pagination.
-  - **Optimistic UI & Rollbacks**: Immediate local task state updates with automated rollback (`TODO_ROLLBACK_TOGGLE`) on server failure.
-  - **Tier 5 & 6 (UI Projection & Explicit Triggers)**: Declarative DOM rendering subscribed to store state, paired with thin event handlers extracting DOM data.
+- **Frontend Reactive State Architecture (`TODO-111`)**:
+  - **Store**: Observable store (`createStore`) with immutable snapshot reading and subscription listeners.
+  - **Reducers**: Pure, synchronous state transformations (`auth`, `todos`, `dashboard`, `ui`) with no side effects.
+  - **API client**: `createApiClient` with explicit `AbortController` cancellation signal integration on all endpoints.
+  - **Action orchestrators**: `createActions` with in-flight `AbortController` request cancellation preventing out-of-order race conditions on rapid filter switching and pagination.
+  - **Optimistic UI & rollbacks**: Immediate local task state updates with automated rollback (`TODO_ROLLBACK_TOGGLE`) on server failure.
+  - **Rendering & event handling**: Declarative DOM rendering subscribed to store state, paired with thin event handlers extracting DOM data.
 
 ## [1.0.0] - 2026-10-31
 
@@ -51,13 +51,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Web Frontend (`apps/web`)**:
   - Enterprise single-page application dashboard with real-time metric cards, inline task creation, checkmark toggling, deletion confirmation, and filter tabs (`TODO-106`, `TODO-107`).
   - Session recovery and protected route handling (`TODO-106`).
-- **CI/CD Quality Gates & Docker Physics**:
-  - Multi-stage Dockerfiles (`services/api/Dockerfile`, `apps/web/Dockerfile`) implementing the Layer Cache Invariant (manifests copied before source code) (`TODO-109`).
-  - Kernel escape protection: Production runner stages drop root; dedicated unprivileged user `apprunner` (UID 1001, GID 1001) with atomic `--chown` (`TODO-109`).
-  - Signal physics: `tini` configured as PID 1 entrypoint for graceful shutdown and zombie process harvesting (`TODO-109`).
-  - Automated gatekeeper script `scripts/check-docker-hygiene.js` enforcing CIS Docker Benchmarks and layer invariants (`TODO-109`).
-  - Docker Smoke Test gate (`scripts/docker-smoke.sh`) implementing the LibreChat pattern: builds image, polls `/health`, asserts non-root execution, and cleanly unmounts (`TODO-109`).
-  - Two-stage CI pipeline with FinOps concurrency throttling (`cancel-in-progress: true`) and Fast Runner $\rightarrow$ Heavy VM waterfall (`TODO-108`, `TODO-109`).
+- **CI/CD Quality Gates & Containerization**:
+  - Multi-stage Dockerfiles (`services/api/Dockerfile`, `apps/web/Dockerfile`) copying manifests before source code so dependency layers stay cached (`TODO-109`).
+  - Rootless execution: production runner stages drop root; dedicated unprivileged user `apprunner` (UID 1001, GID 1001) with atomic `--chown` (`TODO-109`).
+  - Signal handling: `tini` runs as PID 1 entrypoint for graceful shutdown and zombie process harvesting (`TODO-109`).
+  - Automated audit script `scripts/check-docker-hygiene.js` enforcing CIS Docker Benchmarks and layer caching invariants (`TODO-109`).
+  - Docker smoke test gate (`scripts/docker-smoke.sh`): builds the image, polls `/health`, asserts non-root execution, and cleans up (`TODO-109`).
+  - Two-stage CI pipeline with concurrency throttling (`cancel-in-progress: true`) and a fast validation → heavy release waterfall (`TODO-108`, `TODO-109`).
 
 ### Security
 - Password hashes are never returned by any endpoint.
