@@ -259,3 +259,24 @@ Conventions: keys are stable, never renumbered. Points are Fibonacci; 8 means sp
   - [ ] All 75 tests still pass after the renames (re-run all suites).
 
 
+
+## TODO-115 — Governor Role: Admin Override Capabilities
+
+
+- Type: story, 5 points
+- Story: As a governor, I want admin override capabilities so I can view and manage all todos regardless of ownership.
+- Blast radius: `services/api/src/models/Todo.js`, `services/api/src/services/todoService.js`, `services/api/src/controllers/todoController.js`, `services/api/src/routes/todos.js`, `services/api/src/middleware/auth.js`
+- Out of scope: frontend Governor UI, authentication changes, password reset
+- Depends on: TODO-102, TODO-103, TODO-104
+- AC:
+  - [ ] `GET /api/todos` returns all todos (no ownership filter) when authenticated user has `role: governor`
+  - [ ] `PATCH /api/todos/:id` updates any todo (overrides ownership check) when authenticated user has `role: governor`
+  - [ ] `DELETE /api/todos/:id` deletes any todo (overrides ownership check) when authenticated user has `role: governor`
+  - [ ] `GET /api/todos/:id` returns any todo (no ownership filter) when authenticated user has `role: governor`
+  - [ ] Doer (regular user) still sees only own tasks (ownership check enforced)
+  - [ ] Governor role is set in user model (`role: enum: 'doer' | 'governor'`)
+  - [ ] Auth middleware `requireAuth` populates `req.user.role` from the user document
+  - [ ] Tests cover governor override scenarios and doer ownership enforcement
+  - [ ] Invalid role values default to 'doer' scope
+
+

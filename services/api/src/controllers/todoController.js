@@ -53,7 +53,8 @@ class TodoController {
       ownerId: req.user.id,
       completed,
       page,
-      limit
+      limit,
+      role: req.user.role
     });
 
     return res.status(200).json({
@@ -71,7 +72,8 @@ class TodoController {
   getById = (req, res) => {
     const todo = this.#todoService.getTodoById({
       id: req.params.id,
-      ownerId: req.user.id
+      ownerId: req.user.id,
+      role: req.user.role
     });
 
     return res.status(200).json({
@@ -89,7 +91,8 @@ class TodoController {
     const updated = this.#todoService.updateTodo({
       id: req.params.id,
       ownerId: req.user.id,
-      updates: parseResult.data
+      updates: parseResult.data,
+      role: req.user.role
     });
 
     return res.status(200).json({
@@ -101,7 +104,8 @@ class TodoController {
   remove = (req, res) => {
     const result = this.#todoService.deleteTodo({
       id: req.params.id,
-      ownerId: req.user.id
+      ownerId: req.user.id,
+      role: req.user.role
     });
 
     return res.status(200).json({

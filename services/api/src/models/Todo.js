@@ -44,10 +44,35 @@ class TodoRepository {
     return this.#store.get(id) || null;
   }
 
-  findByOwner({ ownerId, completed, page = 1, limit = 10 }) {
+  findByOwner({ ownerId, completed, page = 1, limit = 10, role }) {
+    // Governor sees all todos; doer sees only own tasks
+    if (role === 'governor') {
+      let list = [];
+      for (const doc of this.#store.values()) {
+        if (completed !== undefined && doc.completed !== completed) continue;
+        list.push(doc);
+      }
+
+      // Sort by createdAt descending
+      list.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+      const total = list.length;
+      const totalPages = Math.ceil(total / limit) || 0;
+      const startIndex = (page - 1) * limit;
+      const paginatedData = list.slice(startIndex, startIndex + limit);
+
+      return {
+        data: paginatedData,
+        total,
+        totalPages,
+        page,
+        limit
+      };
+    }
+
+    // Original doer-scoped logic
     if (!ownerId) return { data: [], total: 0, totalPages: 0, page, limit };
 
-    // Compound index emulation: { owner: 1, completed: 1, createdAt: -1 }
     let list = [];
     for (const doc of this.#store.values()) {
       if (doc.owner !== ownerId) continue;
@@ -72,14 +97,14 @@ class TodoRepository {
     };
   }
 
-  update({ id, ownerId, updates }) {
+  update({ id, ownerId, updates, role }) {
     const doc = this.#store.get(id);
     if (!doc) {
       throw new NotFoundError('Todo not found');
     }
 
-    // Multi-tenant security guard: IDOR prevention
-    if (doc.owner !== ownerId) {
+    // Governor overrides ownership check
+    if (role !== 'governor' && doc.owner !== ownerId) {
       throw new ForbiddenError('Access denied: You do not own this todo item');
     }
 
@@ -98,13 +123,14 @@ class TodoRepository {
     return doc;
   }
 
-  delete({ id, ownerId }) {
+  delete({ id, ownerId, role }) {
     const doc = this.#store.get(id);
     if (!doc) {
       throw new NotFoundError('Todo not found');
     }
 
-    if (doc.owner !== ownerId) {
+    // Governor overrides ownership check
+    if (role !== 'governor' && doc.owner !== ownerId) {
       throw new ForbiddenError('Access denied: You do not own this todo item');
     }
 
